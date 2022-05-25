@@ -1,13 +1,17 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { VOTING_PERIOD, VOTING_DELAY, QUORUM_PERCENTAGE } from "../helper-hardhat-config";
+import {
+    VOTING_PERIOD,
+    VOTING_DELAY,
+    QUORUM_PERCENTAGE,
+    PROPOSAL_THRESHOLD,
+} from "../helper-hardhat-config";
 
 const deployGovernorContract: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { getNamedAccounts, deployments } = hre;
     const { deploy, log, get } = deployments;
     const { deployer } = await getNamedAccounts();
     const governanceToken = await get("GovernanceToken");
-    const timelock = await get("Timelock");
 
     log("Deploying governor");
 
@@ -15,9 +19,9 @@ const deployGovernorContract: DeployFunction = async function (hre: HardhatRunti
         from: deployer,
         args: [
             governanceToken.address,
-            timelock.address,
             VOTING_DELAY,
             VOTING_PERIOD,
+            PROPOSAL_THRESHOLD,
             QUORUM_PERCENTAGE,
         ],
         log: true,
