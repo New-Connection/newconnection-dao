@@ -57,14 +57,14 @@ contract NFTExample is ERC721, ERC721Enumerable, Ownable {
     }
 
     function mint(uint256 numberOfTokens) public payable {
-        uint256 ts = totalSupply();
+        uint256 supply = totalSupply();
         require(saleIsActive, "Sale must be active to mint tokens");
         require(numberOfTokens <= MAX_PUBLIC_MINT, "Exceeded max token purchase");
-        require(ts + numberOfTokens <= MAX_SUPPLY, "Purchase would exceed max tokens");
+        require(supply + numberOfTokens <= MAX_SUPPLY, "Purchase would exceed max tokens");
         require(PRICE_PER_TOKEN * numberOfTokens <= msg.value, "Ether value sent is not correct");
 
         for (uint256 i = 0; i < numberOfTokens; i++) {
-            _safeMint(msg.sender, ts + i);
+            _safeMint(msg.sender, supply + i);
         }
     }
 

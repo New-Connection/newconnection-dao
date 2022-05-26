@@ -16,3 +16,4 @@ const deployNFTExample: DeployFunction = async function (hre: HardhatRuntimeEnvi
 };
 
 export default deployNFTExample;
+deployNFTExample.tags = ["all", "NFTExample"];
