@@ -1,9 +1,8 @@
 import { ethers, deployments } from "hardhat";
 import { GovernorContract, Treasury, GovernanceToken } from "../typechain-types";
-import { moveBlocks } from "../utils/move-blocks";
-import { assert, expect } from "chai";
+import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { FUNC, PROPOSAL_DESCRIPTION, PROPOSAL_THRESHOLD } from "../helper-hardhat-config";
+import { FUNC, PROPOSAL_DESCRIPTION } from "../helper-hardhat-config";
 
 describe("Propose to Governor", async () => {
     let governor: GovernorContract;
