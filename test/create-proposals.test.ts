@@ -32,7 +32,9 @@ describe("Propose to Governor", async () => {
         const proposeReceipt = await proposeTx.wait(1);
         const proposalId = proposeReceipt.events![0].args!.proposalId;
 
-        console.log(`proposal with id(${proposalId}) created`);
+        //0 - Pending
+        console.log(`Proposal with id(${proposalId}) created.`);
+        expect(await governor.state(proposalId)).to.equal(0);
     });
 
     it("should fail create proposal", async function () {
@@ -44,13 +46,26 @@ describe("Propose to Governor", async () => {
     });
 
     it("should create proposal after delegated token", async function () {
-        console.log(ethers.utils.formatEther(await governanceToken.getVotes(addr1.address)));
+        console.log(
+            `Account votes before delegate${ethers.utils.formatEther(
+                await governanceToken.getVotes(addr1.address)
+            )}`
+        );
         await governanceToken.connect(owner).delegate(addr1.address);
-        console.log(ethers.utils.formatEther(await governanceToken.getVotes(addr1.address)));
-
+        console.log(
+            `Account votes after delegate${ethers.utils.formatEther(
+                await governanceToken.getVotes(addr1.address)
+            )}`
+        );
         const proposeTx = await governor
             .connect(addr1)
             .propose([treasury.address], [0], [encodedFunctionCall], PROPOSAL_DESCRIPTION);
-        await proposeTx.wait(1);
+        const proposeReceipt = await proposeTx.wait(1);
+
+        const proposalId = proposeReceipt.events![0].args!.proposalId;
+
+        //0 - Pending
+        console.log(`Proposal with id(${proposalId}) created.`);
+        expect(await governor.state(proposalId)).to.equal(0);
     });
 });

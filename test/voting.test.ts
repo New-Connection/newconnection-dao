@@ -23,15 +23,18 @@ describe("Voting for proposals in Governor", async () => {
     let quorumExactlyVotes: SignerWithAddress;
     let quorumLessVotes: SignerWithAddress;
     let withoutVotes: SignerWithAddress;
+    let voter1: SignerWithAddress;
+    let voter2: SignerWithAddress;
 
     let proposalId: number;
-    // 0 - againts, 1 - for, 2 - abstain
-    const voteWay = 1;
+    const voteWayFor = 1; // 0 - against, 1 - for, 2 - abstain
+    const voteWayAgainst = 0;
     const reason = "like it";
 
     beforeEach(async () => {
         await deployments.fixture(["all"]);
-        [owner, quorumExactlyVotes, quorumLessVotes, withoutVotes] = await ethers.getSigners();
+        [owner, quorumExactlyVotes, quorumLessVotes, withoutVotes, voter1, voter2] =
+            await ethers.getSigners();
         governor = await ethers.getContract("GovernorContract");
         treasury = await ethers.getContract("Treasury");
         governanceToken = await ethers.getContract("GovernanceToken");
@@ -56,6 +59,12 @@ describe("Voting for proposals in Governor", async () => {
             ethers.utils.parseEther(quorumNeededVotes.toString())
         );
         await governanceToken.connect(quorumExactlyVotes).delegate(quorumExactlyVotes.address);
+
+        //transfer NEARLY EQUAL amount of tokens to accounts
+        await governanceToken.transfer(voter1.address, ethers.utils.parseEther("100001"));
+        await governanceToken.connect(voter1).delegate(voter1.address);
+        await governanceToken.transfer(voter2.address, ethers.utils.parseEther("100000"));
+        await governanceToken.connect(voter2).delegate(voter2.address);
     };
 
     const createProposal = async () => {
@@ -83,7 +92,7 @@ describe("Voting for proposals in Governor", async () => {
             )}`
         );
 
-        await governor.castVoteWithReason(proposalId, voteWay, reason);
+        await governor.castVoteWithReason(proposalId, voteWayFor, reason);
         console.log("Voted");
 
         await moveBlocks(VOTING_PERIOD + 1);
@@ -111,7 +120,7 @@ describe("Voting for proposals in Governor", async () => {
             )}`
         );
 
-        await governor.connect(quorumLessVotes).castVoteWithReason(proposalId, voteWay, reason);
+        await governor.connect(quorumLessVotes).castVoteWithReason(proposalId, voteWayFor, reason);
         console.log("Voted");
 
         await moveBlocks(VOTING_PERIOD + 1);
@@ -131,7 +140,7 @@ describe("Voting for proposals in Governor", async () => {
             )}`
         );
 
-        await governor.connect(quorumLessVotes).castVoteWithReason(proposalId, voteWay, reason);
+        await governor.connect(quorumLessVotes).castVoteWithReason(proposalId, voteWayFor, reason);
         console.log("Voted");
 
         await moveBlocks(VOTING_PERIOD + 1);
@@ -151,7 +160,9 @@ describe("Voting for proposals in Governor", async () => {
             )}`
         );
 
-        await governor.connect(quorumExactlyVotes).castVoteWithReason(proposalId, voteWay, reason);
+        await governor
+            .connect(quorumExactlyVotes)
+            .castVoteWithReason(proposalId, voteWayFor, reason);
         console.log("Voted");
 
         await moveBlocks(VOTING_PERIOD + 1);
@@ -159,5 +170,66 @@ describe("Voting for proposals in Governor", async () => {
         //4 - Succeeded
         expect(await governor.state(proposalId)).equal(4);
         console.log("Succeeded");
+    });
+
+    it("should succeeded after multi voting", async function () {
+        console.log(
+            `Votes of voter1: ${ethers.utils.formatEther(
+                await governor.getVotes(voter1.address, await governor.proposalSnapshot(proposalId))
+            )}`
+        );
+        console.log(
+            `Votes of voter2: ${ethers.utils.formatEther(
+                await governor.getVotes(voter2.address, await governor.proposalSnapshot(proposalId))
+            )}`
+        );
+
+        await governor.connect(voter1).castVote(proposalId, voteWayFor);
+        await governor.connect(voter2).castVote(proposalId, voteWayAgainst);
+
+        await moveBlocks(VOTING_PERIOD + 1);
+
+        //4 - Succeeded
+        expect(await governor.state(proposalId)).equal(4);
+        console.log("Succeeded");
+    });
+
+    it("should defeated after multi voting", async function () {
+        console.log(
+            `Votes of voter1: ${ethers.utils.formatEther(
+                await governor.getVotes(voter1.address, await governor.proposalSnapshot(proposalId))
+            )}`
+        );
+        console.log(
+            `Votes of voter2: ${ethers.utils.formatEther(
+                await governor.getVotes(voter2.address, await governor.proposalSnapshot(proposalId))
+            )}`
+        );
+
+        await governor.connect(voter1).castVote(proposalId, voteWayAgainst);
+        await governor.connect(voter2).castVote(proposalId, voteWayFor);
+
+        await moveBlocks(VOTING_PERIOD + 1);
+
+        //4 - Defeated
+        expect(await governor.state(proposalId)).equal(3);
+        console.log("Defeated");
+    });
+
+    it("should revert after repeated voting", async function () {
+        await governor.castVoteWithReason(proposalId, voteWayFor, reason);
+        console.log("Voted");
+        await expect(governor.castVoteWithReason(proposalId, voteWayFor, reason)).revertedWith(
+            "GovernorVotingSimple: vote already cast'"
+        );
+    });
+
+    it("should revert vote because voting period ended", async function () {
+        await moveBlocks(VOTING_PERIOD);
+
+        await expect(governor.castVoteWithReason(proposalId, voteWayFor, reason)).revertedWith(
+            "Governor: vote not currently active"
+        );
+        console.log("Voted");
     });
 });
