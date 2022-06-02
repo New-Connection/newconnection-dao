@@ -6,7 +6,6 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
     FUNC,
     PROPOSAL_DESCRIPTION,
-    PROPOSAL_THRESHOLD,
     QUORUM_PERCENTAGE,
     VOTING_DELAY,
     VOTING_PERIOD,
