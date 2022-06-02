@@ -3,12 +3,7 @@ import { GovernorContract, Treasury, GovernanceToken } from "../typechain-types"
 import { moveBlocks } from "../utils/move-blocks";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import {
-    FUNC,
-    PROPOSAL_DESCRIPTION,
-    VOTING_DELAY,
-    VOTING_PERIOD,
-} from "../helper-hardhat-config";
+import { FUNC, PROPOSAL_DESCRIPTION, VOTING_DELAY, VOTING_PERIOD } from "../helper-hardhat-config";
 
 describe("Voting for proposals in Governor", async () => {
     let governor: GovernorContract;
@@ -70,7 +65,7 @@ describe("Voting for proposals in Governor", async () => {
         expect(await treasury.executedProposals()).equal(1);
     });
 
-    it.only("should fail execute proposal (voting period not ended)", async () => {
+    it("should fail execute proposal (voting period not ended)", async () => {
         await createProposal();
         await moveBlocks(VOTING_DELAY + 1);
         console.log(
@@ -85,6 +80,8 @@ describe("Voting for proposals in Governor", async () => {
                 ethers.utils.id(PROPOSAL_DESCRIPTION)
             )
         ).revertedWith("Governor: proposal not successful");
+
+        expect(await treasury.executedProposals()).equal(0);
     });
 
     it("should fail execute proposal (voting against)", async () => {
@@ -109,9 +106,11 @@ describe("Voting for proposals in Governor", async () => {
                 ethers.utils.id(PROPOSAL_DESCRIPTION)
             )
         ).revertedWith("Governor: proposal not successful");
+
+        expect(await treasury.executedProposals()).equal(0);
     });
 
-    it.only("should fail execute proposal (not voting)", async () => {
+    it("should fail execute proposal (not voting)", async () => {
         await createProposal();
         await moveBlocks(VOTING_DELAY + 1);
         console.log(
@@ -131,5 +130,7 @@ describe("Voting for proposals in Governor", async () => {
                 ethers.utils.id(PROPOSAL_DESCRIPTION)
             )
         ).revertedWith("Governor: proposal not successful");
+
+        expect(await treasury.executedProposals()).equal(0);
     });
 });
