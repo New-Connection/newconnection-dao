@@ -14,6 +14,9 @@ contract GovernorContract is
     GovernorVotes,
     GovernorVotesQuorumFraction
 {
+    //proposalId => proposer
+    mapping(uint256 => address) private _proposers;
+
     constructor(
         string memory _name,
         IVotes _token,
@@ -33,7 +36,9 @@ contract GovernorContract is
         GovernorVotesQuorumFraction(_quorumPercentage)
     {}
 
-    // The following functions are overrides required by Solidity.
+    function getProposer(uint256 proposalId) public view returns (address) {
+        return _proposers[proposalId];
+    }
 
     function proposalThreshold()
         public
@@ -42,5 +47,15 @@ contract GovernorContract is
         returns (uint256)
     {
         return super.proposalThreshold();
+    }
+
+    function propose(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        string memory description
+    ) public virtual override returns (uint256 proposalId) {
+        proposalId = super.propose(targets, values, calldatas, description);
+        _proposers[proposalId] = msg.sender;
     }
 }
