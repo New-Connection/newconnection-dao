@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.8;
 
 import "@openzeppelin/contracts/governance/Governor.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
@@ -15,13 +15,15 @@ contract GovernorContract is
     GovernorVotesQuorumFraction
 {
     constructor(
+        string memory _name,
         IVotes _token,
         uint256 _votingDelay,
         uint256 _votingPeriod,
         uint256 _proposalThreshold,
         uint256 _quorumPercentage
     )
-        Governor("GovernorContract")
+        //add to constructor
+        Governor(_name)
         GovernorSettings(
             _votingDelay,
             _votingPeriod, /* 6545 blocks ~ 1 day */

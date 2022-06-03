@@ -1,6 +1,7 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
 import { ethers } from "hardhat";
+import { TOKEN_NAME, TOKEN_SYMBOL } from "../helper-hardhat-config";
 
 const deployGovernanceToken: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { getNamedAccounts, deployments } = hre;
@@ -9,7 +10,7 @@ const deployGovernanceToken: DeployFunction = async function (hre: HardhatRuntim
     log("Deploying governance token...");
     const governanceToken = await deploy("GovernanceToken", {
         from: deployer,
-        args: [],
+        args: [TOKEN_NAME, TOKEN_SYMBOL],
         log: true,
     });
 

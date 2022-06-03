@@ -9,6 +9,9 @@ export const ADDRESS_ZERO = "0x0000000000000000000000000000000000000000";
 export const NEW_STORE_VALUE = 77;
 export const FUNC = "execute";
 export const PROPOSAL_DESCRIPTION = "Proposal #1: execute";
+export const TOKEN_NAME = "Governor Token";
+export const TOKEN_SYMBOL = "GT";
+export const GOVERNOR_NAME = "Governor Contract";
 
 export const developmentChains = ["hardhat", "localhost"];
 export const proposalsFiles = "proposals.json";

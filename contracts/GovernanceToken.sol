@@ -2,15 +2,16 @@
 pragma solidity ^0.8.8;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract GovernanceToken is ERC20Votes {
-    uint256 public maxSupply = 1_000_000_000000000000000000;
+contract GovernanceToken is ERC20Votes, Ownable {
+    uint256 private _initialSupply = 1_000_000 * (10**18);
 
-    constructor()
-        ERC20("GovernanceToken", "GT")
-        ERC20Permit("GovernanceToken")
+    constructor(string memory _name, string memory _symbol)
+        ERC20(_name, _symbol)
+        ERC20Permit(_name)
     {
-        _mint(msg.sender, maxSupply);
+        _mint(msg.sender, _initialSupply);
     }
 
     function _afterTokenTransfer(
@@ -25,10 +26,7 @@ contract GovernanceToken is ERC20Votes {
         super._mint(to, amount);
     }
 
-    function _burn(address account, uint256 amount)
-        internal
-        override(ERC20Votes)
-    {
+    function _burn(address account, uint256 amount) internal override(ERC20Votes) {
         super._burn(account, amount);
     }
 }
