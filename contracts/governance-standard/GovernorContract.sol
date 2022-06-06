@@ -56,9 +56,10 @@ contract GovernorContract is
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description
-    ) public virtual override returns (uint256 proposalId) {
-        proposalId = super.propose(targets, values, calldatas, description);
-        _proposers[proposalId] = msg.sender;
+    ) public virtual override returns (uint256) {
+        uint256 proposalId = super.propose(targets, values, calldatas, description);
+        _proposers[proposalId] = _msgSender();
+        return proposalId;
     }
 
     function cancel(
@@ -66,11 +67,13 @@ contract GovernorContract is
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) public returns (uint256 proposalId) {
+    ) public returns (uint256) {
+        uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
         require(
-            _proposers[proposalId] == _msgSender() || owner() == _msgSender(),
+            getProposer(proposalId) == _msgSender() || owner() == _msgSender(),
             "Not proposer or owner"
         );
-        proposalId = super._cancel(targets, values, calldatas, descriptionHash);
+
+        return super._cancel(targets, values, calldatas, descriptionHash);
     }
 }
