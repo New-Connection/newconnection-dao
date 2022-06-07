@@ -19,23 +19,26 @@ contract GovernorContract is
     //proposalId => proposer
     mapping(uint256 => address) private _proposers;
 
+    string private _governorInfoURI;
+
     constructor(
-        string memory _name,
-        IVotes _token,
-        uint256 _votingDelay,
-        uint256 _votingPeriod,
-        uint256 _proposalThreshold,
-        uint256 _quorumPercentage
+        string memory name_, /* unable to change */
+        string memory governorInfoURI_,
+        IVotes token_, /* unable to change */
+        uint256 votingDelay_,
+        uint256 votingPeriod_,
+        uint256 proposalThreshold_,
+        uint256 quorumPercentage_
     )
         //add to constructor
-        Governor(_name)
+        Governor(name_)
         GovernorSettings(
-            _votingDelay,
-            _votingPeriod, /* 6545 blocks ~ 1 day */
-            _proposalThreshold
+            votingDelay_,
+            votingPeriod_, /* 6545 blocks ~ 1 day */
+            proposalThreshold_
         )
-        GovernorVotes(_token)
-        GovernorVotesQuorumFraction(_quorumPercentage)
+        GovernorVotes(token_)
+        GovernorVotesQuorumFraction(quorumPercentage_)
     {}
 
     function getProposer(uint256 proposalId) public view returns (address) {
@@ -49,6 +52,14 @@ contract GovernorContract is
         returns (uint256)
     {
         return super.proposalThreshold();
+    }
+
+    function governorInfoURI() public view returns (string memory) {
+        return _governorInfoURI;
+    }
+
+    function setGovernorInfoURI(string memory infoURI) external onlyOwner {
+        _governorInfoURI = infoURI;
     }
 
     function propose(

@@ -6,6 +6,7 @@ import {
     QUORUM_PERCENTAGE,
     PROPOSAL_THRESHOLD,
     GOVERNOR_NAME,
+    GOVERNOR_INFO_URI,
 } from "../helper-hardhat-config";
 
 const deployGovernorContract: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
@@ -20,6 +21,7 @@ const deployGovernorContract: DeployFunction = async function (hre: HardhatRunti
         from: deployer,
         args: [
             GOVERNOR_NAME,
+            GOVERNOR_INFO_URI,
             governanceToken.address,
             VOTING_DELAY,
             VOTING_PERIOD,
