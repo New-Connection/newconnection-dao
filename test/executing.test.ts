@@ -10,7 +10,6 @@ import {
     VOTING_DELAY,
     VOTING_PERIOD,
 } from "../helper-hardhat-config";
-import { propose } from "../scripts/propose";
 
 describe("Executing proposals in Governor", async () => {
     let governor: GovernorContract;
@@ -188,7 +187,7 @@ describe("Executing proposals in Governor", async () => {
         expect(await governor.state(proposalId)).equal(2);
     });
 
-    it.only("should fail cancel proposal", async function () {
+    it("should fail cancel proposal", async function () {
         await createProposal(proposer);
 
         await expect(
