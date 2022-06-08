@@ -84,7 +84,7 @@ describe("Propose to Governor", async () => {
         ).revertedWith("Not proposer");
     });
 
-    it.only("should fail set not existing proposal", async function () {
+    it("should fail set not existing proposal", async function () {
         const proposalId = ethers.utils.parseEther("23.33");
 
         await expect(governor.setProposalInfoURI(proposalId, PROPOSAL_INFO_URI)).revertedWith(
