@@ -13,6 +13,7 @@ export const TOKEN_NAME = "Governor Token";
 export const TOKEN_SYMBOL = "GT";
 export const GOVERNOR_NAME = "Governor Contract";
 export const GOVERNOR_INFO_URI = "ipfs://QmeqfJkfCfgFgddkWvHocHpSxC1K3sfFNfribqmZ7WYB2";
+export const PROPOSAL_INFO_URI = "ipfs://ZdfSDfsfgFgddkWvHocHpSxC1K3sfFNfribqdf3dDDF35/proposals/0";
 
 export const developmentChains = ["hardhat", "localhost"];
 export const proposalsFiles = "proposals.json";

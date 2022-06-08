@@ -21,7 +21,6 @@ describe("Executing proposals in Governor", async () => {
     let proposer: SignerWithAddress;
     let failCanceler: SignerWithAddress;
 
-    let proposalId: number;
     const voteWayFor = 1; // 0 - against, 1 - for, 2 - abstain
     const voteWayAgainst = 0;
     const reason = "like it";
@@ -39,13 +38,14 @@ describe("Executing proposals in Governor", async () => {
         await treasury.transferOwnership(governor.address);
     });
 
-    const createProposal = async (signer: SignerWithAddress) => {
+    const createProposal = async (signer: SignerWithAddress): Promise<number> => {
         const proposeTx = await governor
             .connect(signer)
             .propose([treasury.address], [0], [encodedFunctionCall], PROPOSAL_DESCRIPTION);
         const proposeReceipt = await proposeTx.wait(1);
-        proposalId = proposeReceipt.events![0].args!.proposalId;
+        const proposalId = proposeReceipt.events![0].args!.proposalId;
         console.log(`Proposal with id:${proposalId} created`);
+        return proposalId;
     };
 
     const transferTokensToAccounts = async () => {
@@ -60,7 +60,7 @@ describe("Executing proposals in Governor", async () => {
     };
 
     it("should execute proposal", async () => {
-        await createProposal(owner);
+        const proposalId = await createProposal(owner);
         await moveBlocks(VOTING_DELAY + 1);
         console.log(
             `Current state of proposal(id:${proposalId}) is ${await governor.state(proposalId)}`
@@ -85,7 +85,7 @@ describe("Executing proposals in Governor", async () => {
     });
 
     it("should fail execute proposal (voting period not ended)", async () => {
-        await createProposal(owner);
+        const proposalId = await createProposal(owner);
         await moveBlocks(VOTING_DELAY + 1);
         console.log(
             `Current state of proposal(id:${proposalId}) is ${await governor.state(proposalId)}`
@@ -104,7 +104,7 @@ describe("Executing proposals in Governor", async () => {
     });
 
     it("should fail execute proposal (voting against)", async () => {
-        await createProposal(owner);
+        const proposalId = await createProposal(owner);
         await moveBlocks(VOTING_DELAY + 1);
         console.log(
             `Current state of proposal(id:${proposalId}) is ${await governor.state(proposalId)}`
@@ -130,7 +130,7 @@ describe("Executing proposals in Governor", async () => {
     });
 
     it("should fail execute proposal (not voting)", async () => {
-        await createProposal(owner);
+        const proposalId = await createProposal(owner);
         await moveBlocks(VOTING_DELAY + 1);
         console.log(
             `Current state of proposal(id:${proposalId}) is ${await governor.state(proposalId)}`
@@ -154,7 +154,7 @@ describe("Executing proposals in Governor", async () => {
     });
 
     it("should cancel proposal by proposer", async function () {
-        await createProposal(proposer);
+        const proposalId = await createProposal(proposer);
 
         const cancelTx = await governor
             .connect(proposer)
@@ -170,7 +170,7 @@ describe("Executing proposals in Governor", async () => {
     });
 
     it("should cancel proposal by owner", async function () {
-        await createProposal(proposer);
+        const proposalId = await createProposal(proposer);
 
         const cancelTx = await governor
             .connect(owner)
@@ -191,7 +191,7 @@ describe("Executing proposals in Governor", async () => {
         await createProposal(proposer);
 
         await expect(
-             governor
+            governor
                 .connect(failCanceler)
                 .cancel(
                     [treasury.address],

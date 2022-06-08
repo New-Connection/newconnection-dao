@@ -7,7 +7,7 @@ const deployGovernanceToken: DeployFunction = async function (hre: HardhatRuntim
     const { getNamedAccounts, deployments } = hre;
     const { deploy, log } = deployments;
     const { deployer } = await getNamedAccounts();
-    log("Deploying governance token...");
+
     const governanceToken = await deploy("GovernanceToken", {
         from: deployer,
         args: [TOKEN_NAME, TOKEN_SYMBOL],

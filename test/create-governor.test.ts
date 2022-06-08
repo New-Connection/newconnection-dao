@@ -28,23 +28,19 @@ describe("Propose to Governor", async () => {
         expect(await governor.name()).equal(GOVERNOR_NAME);
     });
 
-    it("should return governor infoURI", async function () {
-        expect(await governor.infoURI()).equal(GOVERNOR_INFO_URI);
+    it("should return governor infoURI (empty initially)", async function () {
+        expect(await governor.governorInfoURI()).equal("");
     });
 
     it("should set new governor infoURI", async function () {
-        const newInfoURI = "NEW URI";
-
-        const setTx = await governor.setInfoURI(newInfoURI);
+        const setTx = await governor.setGovernorInfoURI(GOVERNOR_INFO_URI);
         await setTx.wait(1);
 
-        expect(await governor.infoURI()).equal(newInfoURI);
+        expect(await governor.governorInfoURI()).equal(GOVERNOR_INFO_URI);
     });
 
     it("should fail set new governor infoURI (NOT OWNER)", async function () {
-        const newInfoURI = "NEW URI";
-
-        await expect(governor.connect(notOwner).setInfoURI(newInfoURI)).revertedWith(
+        await expect(governor.connect(notOwner).setGovernorInfoURI(GOVERNOR_INFO_URI)).revertedWith(
             "Ownable: caller is not the owner"
         );
     });
