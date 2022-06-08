@@ -3,12 +3,10 @@ import { DeployFunction } from "hardhat-deploy/types";
 
 const deployTreasury: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { getNamedAccounts, deployments } = hre;
-    const { deploy, log } = deployments;
+    const { deploy } = deployments;
     const { deployer } = await getNamedAccounts();
 
-    log("Deploying Treasury");
-
-    const treasury = await deploy("Treasury", {
+    await deploy("Treasury", {
         from: deployer,
         args: [],
         log: true,

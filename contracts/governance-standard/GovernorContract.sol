@@ -19,11 +19,13 @@ contract GovernorContract is
     //proposalId => proposer
     mapping(uint256 => address) private _proposers;
 
-    string private _infoURI;
+    //proposalId => proposalInfoURI
+    mapping(uint256 => string) private _proposalsInfoURIs;
+
+    string private _governorInfoURI;
 
     constructor(
         string memory name_, /* unable to change */
-        string memory infoURI_,
         IVotes token_, /* unable to change */
         uint256 votingDelay_,
         uint256 votingPeriod_,
@@ -39,13 +41,7 @@ contract GovernorContract is
         )
         GovernorVotes(token_)
         GovernorVotesQuorumFraction(quorumPercentage_)
-    {
-        setInfoURI(infoURI_);
-    }
-
-    function getProposer(uint256 proposalId) public view returns (address) {
-        return _proposers[proposalId];
-    }
+    {}
 
     function proposalThreshold()
         public
@@ -56,12 +52,25 @@ contract GovernorContract is
         return super.proposalThreshold();
     }
 
-    function infoURI() public view returns (string memory) {
-        return _infoURI;
+    function getProposer(uint256 proposalId) public view returns (address) {
+        return _proposers[proposalId];
     }
 
-    function setInfoURI(string memory newInfoURI) public onlyOwner {
-        _infoURI = newInfoURI;
+    function governorInfoURI() public view returns (string memory) {
+        return _governorInfoURI;
+    }
+
+    function proposalInfoURI(uint256 proposalId) public view returns (string memory) {
+        return _proposalsInfoURIs[proposalId];
+    }
+
+    function setGovernorInfoURI(string memory newInfoURI) public onlyOwner {
+        _governorInfoURI = newInfoURI;
+    }
+
+    function setProposalInfoURI(uint256 proposalId, string memory infoURI) public {
+        require(getProposer(proposalId) == _msgSender(), "Not proposer");
+        _proposalsInfoURIs[proposalId] = infoURI;
     }
 
     function propose(
