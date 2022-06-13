@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract GovernorContract is
+contract GovernorContractNFT is
     Governor,
     GovernorSettings,
     GovernorCountingSimple,

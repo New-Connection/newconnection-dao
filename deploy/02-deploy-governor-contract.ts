@@ -12,13 +12,13 @@ const deployGovernorContract: DeployFunction = async function (hre: HardhatRunti
     const { getNamedAccounts, deployments } = hre;
     const { deploy, get } = deployments;
     const { deployer } = await getNamedAccounts();
-    const governanceToken = await get("GovernanceToken");
+    const governanceNFT = await get("GovernanceNFT");
 
-    await deploy("GovernorContract", {
+    await deploy("GovernorContractNFT", {
         from: deployer,
         args: [
             GOVERNOR_NAME,
-            governanceToken.address,
+            governanceNFT.address,
             VOTING_DELAY,
             VOTING_PERIOD,
             PROPOSAL_THRESHOLD,
