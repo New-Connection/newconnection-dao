@@ -1,13 +1,14 @@
 import { ethers, deployments } from "hardhat";
-import { GovernorContract, Treasury, GovernanceToken } from "../typechain-types";
+import { GovernorContractNFT, Treasury, GovernanceNFT } from "../typechain-types";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { FUNC, PROPOSAL_DESCRIPTION, PROPOSAL_INFO_URI } from "../helper-hardhat-config";
+import { delegate, reserve, unpause } from "../utils/governanceNFT-utils";
 
 describe("Propose to Governor", async () => {
-    let governor: GovernorContract;
+    let governor: GovernorContractNFT;
     let treasury: Treasury;
-    let governanceToken: GovernanceToken;
+    let governanceNFT: GovernanceNFT;
 
     let encodedFunctionCall: string;
 
@@ -16,10 +17,14 @@ describe("Propose to Governor", async () => {
     beforeEach(async () => {
         await deployments.fixture(["all"]);
         [owner, notOwner] = await ethers.getSigners();
-        governor = await ethers.getContract("GovernorContract");
+        governor = await ethers.getContract("GovernorContractNFT");
         treasury = await ethers.getContract("Treasury");
-        governanceToken = await ethers.getContract("GovernanceToken");
+        governanceNFT = await ethers.getContract("GovernanceNFT");
         encodedFunctionCall = treasury.interface.encodeFunctionData(FUNC);
+
+        await unpause(owner);
+        await reserve(owner, 1);
+        await delegate(owner, owner.address);
     });
 
     const createProposal = async (signer: SignerWithAddress): Promise<number> => {
@@ -50,13 +55,13 @@ describe("Propose to Governor", async () => {
     it("should create proposal after delegated token", async function () {
         console.log(
             `Account votes before delegate${ethers.utils.formatEther(
-                await governanceToken.getVotes(notOwner.address)
+                await governanceNFT.getVotes(notOwner.address)
             )}`
         );
-        await governanceToken.connect(owner).delegate(notOwner.address);
+        await governanceNFT.connect(owner).delegate(notOwner.address);
         console.log(
             `Account votes after delegate${ethers.utils.formatEther(
-                await governanceToken.getVotes(notOwner.address)
+                await governanceNFT.getVotes(notOwner.address)
             )}`
         );
 

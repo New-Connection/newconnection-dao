@@ -1,5 +1,5 @@
 import { ethers, deployments } from "hardhat";
-import { GovernorContract, GovernanceToken } from "../typechain-types";
+import { GovernorContractNFT, GovernanceNFT } from "../typechain-types";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
@@ -10,18 +10,22 @@ import {
     VOTING_DELAY,
     VOTING_PERIOD,
 } from "../helper-hardhat-config";
+import { reserve, unpause } from "../utils/governanceNFT-utils";
 
 describe("Propose to Governor", async () => {
-    let governor: GovernorContract;
-    let governanceToken: GovernanceToken;
+    let governor: GovernorContractNFT;
+    let governanceNFT: GovernanceNFT;
 
     let owner: SignerWithAddress, notOwner: SignerWithAddress;
 
-    beforeEach(async () => {
+    before(async () => {
         await deployments.fixture(["all"]);
         [owner, notOwner] = await ethers.getSigners();
-        governor = await ethers.getContract("GovernorContract");
-        governanceToken = await ethers.getContract("GovernanceToken");
+        governor = await ethers.getContract("GovernorContractNFT");
+        governanceNFT = await ethers.getContract("GovernanceNFT");
+
+        await unpause(owner);
+        await reserve(owner, 1);
     });
 
     it("should return governor name", async function () {
@@ -46,7 +50,7 @@ describe("Propose to Governor", async () => {
     });
 
     it("should return governance token address", async function () {
-        expect(await governor.token()).equal(governanceToken.address);
+        expect(await governor.token()).equal(governanceNFT.address);
     });
 
     it("should return voting delay", async function () {

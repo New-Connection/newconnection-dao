@@ -4,7 +4,6 @@ import {
     VOTING_PERIOD,
     VOTING_DELAY,
     QUORUM_PERCENTAGE,
-    PROPOSAL_THRESHOLD,
     GOVERNOR_NAME,
 } from "../helper-hardhat-config";
 
@@ -21,7 +20,6 @@ const deployGovernorContract: DeployFunction = async function (hre: HardhatRunti
             governanceNFT.address,
             VOTING_DELAY,
             VOTING_PERIOD,
-            PROPOSAL_THRESHOLD,
             QUORUM_PERCENTAGE,
         ],
         log: true,

@@ -1,5 +1,5 @@
 import { ethers, deployments } from "hardhat";
-import { GovernorContract, Treasury, GovernanceToken } from "../typechain-types";
+import { GovernorContractNFT, Treasury, GovernanceNFT } from "../typechain-types";
 import { moveBlocks } from "../utils/move-blocks";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -10,18 +10,19 @@ import {
     VOTING_DELAY,
     VOTING_PERIOD,
 } from "../helper-hardhat-config";
+import { delegate, reserve, unpause, transferNFT } from "../utils/governanceNFT-utils";
 
 describe("Voting for proposals in Governor", async () => {
-    let governor: GovernorContract;
+    let governor: GovernorContractNFT;
     let treasury: Treasury;
-    let governanceToken: GovernanceToken;
+    let governanceNFT: GovernanceNFT;
 
     let encodedFunctionCall: string;
 
     let owner: SignerWithAddress;
-    let quorumExactlyVotes: SignerWithAddress;
-    let quorumLessVotes: SignerWithAddress;
-    let withoutVotes: SignerWithAddress;
+    let quorumExactlyVotesVoter: SignerWithAddress;
+    let quorumLessVotesVoter: SignerWithAddress;
+    let withoutVotesVoter: SignerWithAddress;
     let voter1: SignerWithAddress;
     let voter2: SignerWithAddress;
 
@@ -32,38 +33,43 @@ describe("Voting for proposals in Governor", async () => {
 
     beforeEach(async () => {
         await deployments.fixture(["all"]);
-        [owner, quorumExactlyVotes, quorumLessVotes, withoutVotes, voter1, voter2] =
+        [owner, quorumExactlyVotesVoter, quorumLessVotesVoter, withoutVotesVoter, voter1, voter2] =
             await ethers.getSigners();
-        governor = await ethers.getContract("GovernorContract");
+        governor = await ethers.getContract("GovernorContractNFT");
         treasury = await ethers.getContract("Treasury");
-        governanceToken = await ethers.getContract("GovernanceToken");
+        governanceNFT = await ethers.getContract("GovernanceNFT");
         encodedFunctionCall = treasury.interface.encodeFunctionData(FUNC);
 
-        //Transfer tokens to accounts because ERC20Votes takes snapshot of delegated tokens in governor.proposalSnapshot(proposalId)
-        await transferTokensToAccounts();
+        await unpause(owner);
+
+        await reserve(owner, 100);
+        await delegate(owner, owner.address);
+
+        //Transfer nft to addresses
+        // await transferNFT(owner, proposer.address, 1);
+        // await delegate(proposer, proposer.address);
+        await transferNftToAccounts();
 
         await createProposal();
     });
 
-    const transferTokensToAccounts = async () => {
+    const transferNftToAccounts = async () => {
         //transfer token to account for Test: Less than quorum needed votes
-        await governanceToken.transfer(quorumLessVotes.address, ethers.utils.parseEther("200"));
-        await governanceToken.connect(quorumLessVotes).delegate(quorumLessVotes.address);
+        await transferNFT(owner, quorumLessVotesVoter.address, 1);
+        await delegate(quorumLessVotesVoter, quorumLessVotesVoter.address);
 
         //transfer token to account for Test: Exactly quorum needed votes
-        const totalSupply = ethers.utils.formatEther(await governanceToken.totalSupply());
+        const totalSupply = await governanceNFT.totalSupply();
         const quorumNeededVotes = (+totalSupply * QUORUM_PERCENTAGE) / 100;
-        await governanceToken.transfer(
-            quorumExactlyVotes.address,
-            ethers.utils.parseEther(quorumNeededVotes.toString())
-        );
-        await governanceToken.connect(quorumExactlyVotes).delegate(quorumExactlyVotes.address);
+        await transferNFT(owner, quorumExactlyVotesVoter.address, quorumNeededVotes);
+        await delegate(quorumExactlyVotesVoter, quorumExactlyVotesVoter.address);
 
-        //transfer NEARLY EQUAL amount of tokens to accounts
-        await governanceToken.transfer(voter1.address, ethers.utils.parseEther("100001"));
-        await governanceToken.connect(voter1).delegate(voter1.address);
-        await governanceToken.transfer(voter2.address, ethers.utils.parseEther("100000"));
-        await governanceToken.connect(voter2).delegate(voter2.address);
+        //transfer NEARLY EQUAL amount of tokens to accounts for MULTI voting
+        //voter1's votes > voter2's votes
+        await transferNFT(owner, voter1.address, quorumNeededVotes + 1);
+        await delegate(voter1, voter1.address);
+        await transferNFT(owner, voter2.address, quorumNeededVotes);
+        await delegate(voter2, voter2.address);
     };
 
     const createProposal = async () => {
@@ -86,8 +92,9 @@ describe("Voting for proposals in Governor", async () => {
 
     it("should vote for proposal, state after: Succeeded", async function () {
         console.log(
-            `Votes of voter: ${ethers.utils.formatEther(
-                await governor.getVotes(owner.address, await governor.proposalSnapshot(proposalId))
+            `Votes of voter: ${await governor.getVotes(
+                owner.address,
+                await governor.proposalSnapshot(proposalId)
             )}`
         );
 
@@ -111,15 +118,15 @@ describe("Voting for proposals in Governor", async () => {
 
     it("should vote but 0 balance, state after: Defeated", async function () {
         console.log(
-            `Votes of voter: ${ethers.utils.formatEther(
-                await governor.getVotes(
-                    withoutVotes.address,
-                    await governor.proposalSnapshot(proposalId)
-                )
+            `Votes of voter: ${await governor.getVotes(
+                withoutVotesVoter.address,
+                await governor.proposalSnapshot(proposalId)
             )}`
         );
 
-        await governor.connect(quorumLessVotes).castVoteWithReason(proposalId, voteWayFor, reason);
+        await governor
+            .connect(quorumLessVotesVoter)
+            .castVoteWithReason(proposalId, voteWayFor, reason);
         console.log("Voted");
 
         await moveBlocks(VOTING_PERIOD + 1);
@@ -131,15 +138,15 @@ describe("Voting for proposals in Governor", async () => {
 
     it("should vote but not enough quorum, state after: Defeated", async function () {
         console.log(
-            `Votes of voter: ${ethers.utils.formatEther(
-                await governor.getVotes(
-                    quorumLessVotes.address,
-                    await governor.proposalSnapshot(proposalId)
-                )
+            `Votes of voter: ${await governor.getVotes(
+                quorumLessVotesVoter.address,
+                await governor.proposalSnapshot(proposalId)
             )}`
         );
 
-        await governor.connect(quorumLessVotes).castVoteWithReason(proposalId, voteWayFor, reason);
+        await governor
+            .connect(quorumLessVotesVoter)
+            .castVoteWithReason(proposalId, voteWayFor, reason);
         console.log("Voted");
 
         await moveBlocks(VOTING_PERIOD + 1);
@@ -151,16 +158,14 @@ describe("Voting for proposals in Governor", async () => {
 
     it("should vote with exactly quorum percentage votes, state after: Succeeded", async function () {
         console.log(
-            `Votes of voter (exactly quorum needed votes): ${ethers.utils.formatEther(
-                await governor.getVotes(
-                    quorumExactlyVotes.address,
-                    await governor.proposalSnapshot(proposalId)
-                )
+            `Votes of voter (exactly quorum needed votes): ${await governor.getVotes(
+                quorumExactlyVotesVoter.address,
+                await governor.proposalSnapshot(proposalId)
             )}`
         );
 
         await governor
-            .connect(quorumExactlyVotes)
+            .connect(quorumExactlyVotesVoter)
             .castVoteWithReason(proposalId, voteWayFor, reason);
         console.log("Voted");
 
@@ -173,13 +178,15 @@ describe("Voting for proposals in Governor", async () => {
 
     it("should succeeded after multi voting", async function () {
         console.log(
-            `Votes of voter1: ${ethers.utils.formatEther(
-                await governor.getVotes(voter1.address, await governor.proposalSnapshot(proposalId))
+            `Votes of voter1: ${await governor.getVotes(
+                voter1.address,
+                await governor.proposalSnapshot(proposalId)
             )}`
         );
         console.log(
-            `Votes of voter2: ${ethers.utils.formatEther(
-                await governor.getVotes(voter2.address, await governor.proposalSnapshot(proposalId))
+            `Votes of voter2: ${await governor.getVotes(
+                voter2.address,
+                await governor.proposalSnapshot(proposalId)
             )}`
         );
 
@@ -195,13 +202,15 @@ describe("Voting for proposals in Governor", async () => {
 
     it("should defeated after multi voting", async function () {
         console.log(
-            `Votes of voter1: ${ethers.utils.formatEther(
-                await governor.getVotes(voter1.address, await governor.proposalSnapshot(proposalId))
+            `Votes of voter1: ${await governor.getVotes(
+                voter1.address,
+                await governor.proposalSnapshot(proposalId)
             )}`
         );
         console.log(
-            `Votes of voter2: ${ethers.utils.formatEther(
-                await governor.getVotes(voter2.address, await governor.proposalSnapshot(proposalId))
+            `Votes of voter2: ${await governor.getVotes(
+                voter2.address,
+                await governor.proposalSnapshot(proposalId)
             )}`
         );
 

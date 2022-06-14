@@ -29,15 +29,13 @@ contract GovernorContractNFT is
         IVotes token_, /* unable to change */
         uint256 votingDelay_,
         uint256 votingPeriod_,
-        uint256 proposalThreshold_,
         uint256 quorumPercentage_
     )
-        //add to constructor
         Governor(name_)
         GovernorSettings(
             votingDelay_,
             votingPeriod_, /* 6545 blocks ~ 1 day */
-            proposalThreshold_
+            1
         )
         GovernorVotes(token_)
         GovernorVotesQuorumFraction(quorumPercentage_)

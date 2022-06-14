@@ -1,20 +1,15 @@
 import { ethers, deployments } from "hardhat";
-import { GovernorContract, Treasury, GovernanceToken } from "../typechain-types";
+import { GovernorContractNFT, Treasury, GovernanceNFT } from "../typechain-types";
 import { moveBlocks } from "../utils/move-blocks";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import {
-    FUNC,
-    PROPOSAL_DESCRIPTION,
-    QUORUM_PERCENTAGE,
-    VOTING_DELAY,
-    VOTING_PERIOD,
-} from "../helper-hardhat-config";
+import { FUNC, PROPOSAL_DESCRIPTION, VOTING_DELAY, VOTING_PERIOD } from "../helper-hardhat-config";
+import { delegate, reserve, unpause, transferNFT } from "../utils/governanceNFT-utils";
 
 describe("Executing proposals in Governor", async () => {
-    let governor: GovernorContract;
+    let governor: GovernorContractNFT;
     let treasury: Treasury;
-    let governanceToken: GovernanceToken;
+    let governanceNFT: GovernanceNFT;
 
     let encodedFunctionCall: string;
     let owner: SignerWithAddress;
@@ -28,12 +23,18 @@ describe("Executing proposals in Governor", async () => {
     beforeEach(async () => {
         await deployments.fixture(["all"]);
         [owner, proposer, failCanceler] = await ethers.getSigners();
-        governor = await ethers.getContract("GovernorContract");
+        governor = await ethers.getContract("GovernorContractNFT");
         treasury = await ethers.getContract("Treasury");
-        governanceToken = await ethers.getContract("GovernanceToken");
+        governanceNFT = await ethers.getContract("GovernanceNFT");
         encodedFunctionCall = treasury.interface.encodeFunctionData(FUNC);
 
-        await transferTokensToAccounts();
+        await unpause(owner);
+
+        await reserve(owner, 2);
+        await delegate(owner, owner.address);
+
+        await transferNFT(owner, proposer.address, 1);
+        await delegate(proposer, proposer.address);
 
         await treasury.transferOwnership(governor.address);
     });
@@ -46,17 +47,6 @@ describe("Executing proposals in Governor", async () => {
         const proposalId = proposeReceipt.events![0].args!.proposalId;
         console.log(`Proposal with id:${proposalId} created`);
         return proposalId;
-    };
-
-    const transferTokensToAccounts = async () => {
-        //transfer token to account for Test: Exactly quorum needed votes
-        const totalSupply = ethers.utils.formatEther(await governanceToken.totalSupply());
-        const quorumNeededVotes = (+totalSupply * QUORUM_PERCENTAGE) / 100;
-        await governanceToken.transfer(
-            proposer.address,
-            ethers.utils.parseEther(quorumNeededVotes.toString())
-        );
-        await governanceToken.connect(proposer).delegate(proposer.address);
     };
 
     it("should execute proposal", async () => {
