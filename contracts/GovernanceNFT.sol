@@ -5,18 +5,19 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/draft-ERC721Votes.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, Pausable, Ownable {
-    uint256 public constant MAX_SUPPLY = 10000;
-    uint256 public constant MAX_PUBLIC_MINT = 5;
-    uint256 public constant PRICE_PER_TOKEN = 0.1 ether;
-
+contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, Ownable {
+    uint256 public immutable maxSupply;
     string private _baseURIextended;
+    mapping(address => uint8) private _allowList;
 
-    constructor(string memory name, string memory symbol) ERC721(name, symbol) EIP712(name, "1") {
-        pause();
+    constructor(
+        string memory name_,
+        string memory symbol_,
+        uint256 maxSupply_
+    ) ERC721(name_, symbol_) EIP712(name_, "1") {
+        maxSupply = maxSupply_;
     }
 
     function supportsInterface(bytes4 interfaceId)
@@ -33,21 +34,27 @@ contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, Pausabl
         return _baseURIextended;
     }
 
-    function mint(uint256 numberOfTokens) public payable whenNotPaused {
+    function mint() external {
         uint256 supply = totalSupply();
-        require(numberOfTokens <= MAX_PUBLIC_MINT, "Exceeded max token purchase");
-        require(supply + numberOfTokens <= MAX_SUPPLY, "Purchase would exceed max tokens");
-        require(PRICE_PER_TOKEN * numberOfTokens <= msg.value, "Ether value sent is not correct");
+        require(_allowList[msg.sender] >= 1, "Exceeded max available to purchase");
+        require(supply + 1 <= maxSupply, "Purchase would exceed max tokens");
 
-        for (uint256 i = 0; i < numberOfTokens; i++) {
-            _safeMint(msg.sender, supply + i);
+        _allowList[msg.sender] -= 1;
+
+        _safeMint(msg.sender, supply);
+    }
+
+    function setAllowList(address[] calldata addresses, uint8 numAllowedToMint) external onlyOwner {
+        for (uint256 i = 0; i < addresses.length; i++) {
+            _allowList[addresses[i]] = numAllowedToMint;
         }
     }
 
-    function reserve(uint256 n) public onlyOwner {
+    function reserve(uint256 amount) public onlyOwner {
         uint256 supply = totalSupply();
-        uint256 i;
-        for (i = 0; i < n; i++) {
+        require(supply + amount <= maxSupply, "Purchase would exceed max tokens");
+
+        for (uint256 i = 0; i < amount; i++) {
             _safeMint(msg.sender, supply + i);
         }
     }
@@ -56,19 +63,11 @@ contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, Pausabl
         _baseURIextended = baseURI;
     }
 
-    function pause() public onlyOwner {
-        _pause();
-    }
-
-    function unpause() public onlyOwner {
-        _unpause();
-    }
-
     function _beforeTokenTransfer(
         address from,
         address to,
         uint256 tokenId
-    ) internal override(ERC721, ERC721Enumerable) whenNotPaused {
+    ) internal override(ERC721, ERC721Enumerable) {
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
