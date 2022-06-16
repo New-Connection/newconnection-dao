@@ -34,10 +34,14 @@ contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, Ownable
         return _baseURIextended;
     }
 
+    function numAvailableToMint(address addr) external view returns (uint8) {
+        return _allowList[addr];
+    }
+
     function mint() external {
         uint256 supply = totalSupply();
-        require(_allowList[msg.sender] >= 1, "Exceeded max available to purchase");
-        require(supply + 1 <= maxSupply, "Purchase would exceed max tokens");
+        require(_allowList[msg.sender] >= 1, "Exceeded max available to mint");
+        require(supply + 1 <= maxSupply, "Exceeded max supply");
 
         _allowList[msg.sender] -= 1;
 
@@ -52,7 +56,7 @@ contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, Ownable
 
     function reserve(uint256 amount) public onlyOwner {
         uint256 supply = totalSupply();
-        require(supply + amount <= maxSupply, "Purchase would exceed max tokens");
+        require(supply + amount <= maxSupply, "Max supply has been exceeded");
 
         for (uint256 i = 0; i < amount; i++) {
             _safeMint(msg.sender, supply + i);
@@ -77,10 +81,5 @@ contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, Ownable
         uint256 tokenId
     ) internal virtual override(ERC721, ERC721Votes) {
         super._afterTokenTransfer(from, to, tokenId);
-    }
-
-    function withdraw() public onlyOwner {
-        uint256 balance = address(this).balance;
-        payable(msg.sender).transfer(balance);
     }
 }

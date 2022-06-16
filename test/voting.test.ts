@@ -10,7 +10,7 @@ import {
     VOTING_DELAY,
     VOTING_PERIOD,
 } from "../helper-hardhat-config";
-import { delegate, reserve, unpause, transferNFT } from "../utils/governanceNFT-utils";
+import { delegate, reserve, transferNFT } from "../utils/governanceNFT-utils";
 
 describe("Voting for proposals in Governor", async () => {
     let governor: GovernorContractNFT;
@@ -39,8 +39,6 @@ describe("Voting for proposals in Governor", async () => {
         treasury = await ethers.getContract("Treasury");
         governanceNFT = await ethers.getContract("GovernanceNFT");
         encodedFunctionCall = treasury.interface.encodeFunctionData(FUNC);
-
-        await unpause(owner);
 
         await reserve(owner, 100);
         await delegate(owner, owner.address);
