@@ -1,16 +1,15 @@
 import * as dotenv from "dotenv";
 
-import {HardhatUserConfig, task} from "hardhat/config";
+import { HardhatUserConfig, task } from "hardhat/config";
 import "@nomiclabs/hardhat-etherscan";
 import "@nomiclabs/hardhat-waffle";
-import "@nomiclabs/hardhat-ethers"
+import "@nomiclabs/hardhat-ethers";
 import "@typechain/hardhat";
-import "hardhat-deploy"
+import "hardhat-deploy";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
 
 dotenv.config();
-
 
 const config: HardhatUserConfig = {
     solidity: {
@@ -26,19 +25,22 @@ const config: HardhatUserConfig = {
     namedAccounts: {
         deployer: {
             default: 0,
-        }
+        },
     },
     networks: {
         hardhat: {
-            chainId: 37337
+            chainId: 37337,
         },
         localhost: {
-            chainId: 37337
+            chainId: 37337,
         },
         ropsten: {
             url: process.env.ROPSTEN_URL || "",
-            accounts:
-                process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+            accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+        },
+        goerli: {
+            url: process.env.GOERLI_URL || "",
+            accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
         },
     },
     gasReporter: {
