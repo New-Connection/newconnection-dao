@@ -1,5 +1,5 @@
 import { ethers, deployments } from "hardhat";
-import { GovernorContractNFT, Treasury, GovernanceNFT } from "../typechain-types";
+import { GovernorContract, Treasury, GovernanceNFT } from "../typechain-types";
 import { moveBlocks } from "../utils/move-blocks";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -13,7 +13,7 @@ import {
 import { delegate, reserve, transferNFT } from "../utils/governanceNFT-utils";
 
 describe("Voting for proposals in Governor", async () => {
-    let governor: GovernorContractNFT;
+    let governor: GovernorContract;
     let treasury: Treasury;
     let governanceNFT: GovernanceNFT;
 
@@ -35,7 +35,7 @@ describe("Voting for proposals in Governor", async () => {
         await deployments.fixture(["all"]);
         [owner, quorumExactlyVotesVoter, quorumLessVotesVoter, withoutVotesVoter, voter1, voter2] =
             await ethers.getSigners();
-        governor = await ethers.getContract("GovernorContractNFT");
+        governor = await ethers.getContract("GovernorContract");
         treasury = await ethers.getContract("Treasury");
         governanceNFT = await ethers.getContract("GovernanceNFT");
         encodedFunctionCall = treasury.interface.encodeFunctionData(FUNC);

@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract GovernorContractNFT is
+contract GovernorContract is
     Governor,
     GovernorSettings,
     GovernorCountingSimple,
@@ -27,13 +27,12 @@ contract GovernorContractNFT is
     constructor(
         string memory name_, /* unable to change */
         IVotes token_, /* unable to change */
-        uint256 votingDelay_,
         uint256 votingPeriod_,
         uint256 quorumPercentage_
     )
         Governor(name_)
         GovernorSettings(
-            votingDelay_,
+            1,
             votingPeriod_, /* 6545 blocks ~ 1 day */
             1
         )

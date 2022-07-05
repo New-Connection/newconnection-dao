@@ -1,12 +1,12 @@
 import { ethers, deployments } from "hardhat";
-import { GovernorContractNFT, Treasury, GovernanceNFT } from "../typechain-types";
+import { GovernorContract, Treasury, GovernanceNFT } from "../typechain-types";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { FUNC, PROPOSAL_DESCRIPTION, PROPOSAL_INFO_URI } from "../helper-hardhat-config";
 import { delegate, reserve } from "../utils/governanceNFT-utils";
 
 describe("Propose to Governor", async () => {
-    let governor: GovernorContractNFT;
+    let governor: GovernorContract;
     let treasury: Treasury;
     let governanceNFT: GovernanceNFT;
 
@@ -17,7 +17,7 @@ describe("Propose to Governor", async () => {
     beforeEach(async () => {
         await deployments.fixture(["all"]);
         [owner, notOwner] = await ethers.getSigners();
-        governor = await ethers.getContract("GovernorContractNFT");
+        governor = await ethers.getContract("GovernorContract");
         treasury = await ethers.getContract("Treasury");
         governanceNFT = await ethers.getContract("GovernanceNFT");
         encodedFunctionCall = treasury.interface.encodeFunctionData(FUNC);

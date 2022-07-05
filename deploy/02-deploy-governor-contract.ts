@@ -2,7 +2,6 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
 import {
     VOTING_PERIOD,
-    VOTING_DELAY,
     QUORUM_PERCENTAGE,
     GOVERNOR_NAME,
 } from "../helper-hardhat-config";
@@ -13,12 +12,11 @@ const deployGovernorContract: DeployFunction = async function (hre: HardhatRunti
     const { deployer } = await getNamedAccounts();
     const governanceNFT = await get("GovernanceNFT");
 
-    await deploy("GovernorContractNFT", {
+    await deploy("GovernorContract", {
         from: deployer,
         args: [
             GOVERNOR_NAME,
             governanceNFT.address,
-            VOTING_DELAY,
             VOTING_PERIOD,
             QUORUM_PERCENTAGE,
         ],
