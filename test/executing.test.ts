@@ -47,7 +47,7 @@ describe("Executing proposals in Governor", async () => {
         return proposalId;
     };
 
-    it("should execute proposal", async () => {
+    it("should execute proposal with treasury", async () => {
         const proposalId = await createProposal(owner);
         await moveBlocks(VOTING_DELAY + 1);
         console.log(

@@ -24,6 +24,8 @@ contract GovernorContract is
 
     string private _governorInfoURI;
 
+    uint256 private _totalProposals;
+
     constructor(
         string memory name_, /* unable to change */
         IVotes token_, /* unable to change */
@@ -47,6 +49,10 @@ contract GovernorContract is
         returns (uint256)
     {
         return super.proposalThreshold();
+    }
+
+    function getTotalProposals() public view returns (uint256) {
+        return _totalProposals;
     }
 
     function getProposer(uint256 proposalId) public view returns (address) {
@@ -78,6 +84,7 @@ contract GovernorContract is
     ) public virtual override returns (uint256) {
         uint256 proposalId = super.propose(targets, values, calldatas, description);
         _proposers[proposalId] = _msgSender();
+        _totalProposals++;
         return proposalId;
     }
 
