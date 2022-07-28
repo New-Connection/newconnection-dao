@@ -1,10 +1,9 @@
 import { ethers, deployments } from "hardhat";
-import { GovernorContract, Treasury, GovernanceNFT } from "../typechain-types";
+import { GovernorContract, GovernanceNFT } from "../typechain-types";
 import { moveBlocks } from "../utils/move-blocks";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-    FUNC,
     PROPOSAL_DESCRIPTION,
     QUORUM_PERCENTAGE,
     VOTING_DELAY,
@@ -14,7 +13,6 @@ import { delegate, reserve, transferNFT } from "../utils/governanceNFT-utils";
 
 describe("Voting for proposals in Governor", async () => {
     let governor: GovernorContract;
-    let treasury: Treasury;
     let governanceNFT: GovernanceNFT;
 
     let encodedFunctionCall: string;
@@ -36,9 +34,8 @@ describe("Voting for proposals in Governor", async () => {
         [owner, quorumExactlyVotesVoter, quorumLessVotesVoter, withoutVotesVoter, voter1, voter2] =
             await ethers.getSigners();
         governor = await ethers.getContract("GovernorContract");
-        treasury = await ethers.getContract("Treasury");
         governanceNFT = await ethers.getContract("GovernanceNFT");
-        encodedFunctionCall = treasury.interface.encodeFunctionData(FUNC);
+        encodedFunctionCall = governor.interface.encodeFunctionData("incrementExecutedProposals");
 
         await reserve(owner, 100);
         await delegate(owner, owner.address);
@@ -72,7 +69,7 @@ describe("Voting for proposals in Governor", async () => {
 
     const createProposal = async () => {
         const proposeTx = await governor.propose(
-            [treasury.address],
+            [governor.address],
             [0],
             [encodedFunctionCall],
             PROPOSAL_DESCRIPTION

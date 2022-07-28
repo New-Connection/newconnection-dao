@@ -1,13 +1,12 @@
-import { ethers, deployments } from "hardhat";
-import { GovernorContract, Treasury, GovernanceNFT } from "../typechain-types";
-import { expect } from "chai";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { FUNC, PROPOSAL_DESCRIPTION, PROPOSAL_INFO_URI } from "../helper-hardhat-config";
-import { delegate, reserve } from "../utils/governanceNFT-utils";
+import {ethers, deployments} from "hardhat";
+import {GovernorContract, GovernanceNFT} from "../typechain-types";
+import {expect} from "chai";
+import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import {PROPOSAL_DESCRIPTION, PROPOSAL_INFO_URI} from "../helper-hardhat-config";
+import {delegate, reserve} from "../utils/governanceNFT-utils";
 
 describe("Propose to Governor", async () => {
     let governor: GovernorContract;
-    let treasury: Treasury;
     let governanceNFT: GovernanceNFT;
 
     let encodedFunctionCall: string;
@@ -18,9 +17,8 @@ describe("Propose to Governor", async () => {
         await deployments.fixture(["all"]);
         [owner, notOwner] = await ethers.getSigners();
         governor = await ethers.getContract("GovernorContract");
-        treasury = await ethers.getContract("Treasury");
         governanceNFT = await ethers.getContract("GovernanceNFT");
-        encodedFunctionCall = treasury.interface.encodeFunctionData(FUNC);
+        encodedFunctionCall = governor.interface.encodeFunctionData('incrementExecutedProposals');
 
         await reserve(owner, 1);
         await delegate(owner, owner.address);
@@ -29,7 +27,7 @@ describe("Propose to Governor", async () => {
     const createProposal = async (signer: SignerWithAddress): Promise<number> => {
         const proposeTx = await governor
             .connect(signer)
-            .propose([treasury.address], [0], [encodedFunctionCall], PROPOSAL_DESCRIPTION);
+            .propose([governor.address], [0], [encodedFunctionCall], PROPOSAL_DESCRIPTION);
         const proposeReceipt = await proposeTx.wait(1);
 
         return proposeReceipt.events![0].args!.proposalId;
@@ -47,7 +45,7 @@ describe("Propose to Governor", async () => {
         await expect(
             governor
                 .connect(notOwner)
-                .propose([treasury.address], [0], [encodedFunctionCall], PROPOSAL_DESCRIPTION)
+                .propose([governor.address], [0], [encodedFunctionCall], PROPOSAL_DESCRIPTION)
         ).revertedWith("Governor: proposer votes below proposal threshold");
     });
 
