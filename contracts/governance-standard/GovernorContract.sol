@@ -25,6 +25,7 @@ contract GovernorContract is
     string private _governorInfoURI;
 
     uint256 private _totalProposals;
+    uint256 private _executedProposals;
 
     constructor(
         string memory name_, /* unable to change */
@@ -53,6 +54,10 @@ contract GovernorContract is
 
     function getTotalProposals() public view returns (uint256) {
         return _totalProposals;
+    }
+
+    function getExecutedProposals() public view returns (uint256) {
+        return _executedProposals;
     }
 
     function getProposer(uint256 proposalId) public view returns (address) {
@@ -101,5 +106,9 @@ contract GovernorContract is
         );
 
         return super._cancel(targets, values, calldatas, descriptionHash);
+    }
+
+    function incrementExecutedProposals() public onlyGovernance {
+        _executedProposals++;
     }
 }
