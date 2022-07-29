@@ -65,6 +65,6 @@ describe("Propose to Governor", async () => {
     });
 
     it("should return quorum percentage", async function () {
-        expect(await governor.quorumNumerator()).equal(QUORUM_PERCENTAGE);
+        expect(await governor["quorumNumerator()"]()).equal(QUORUM_PERCENTAGE);
     });
 });
