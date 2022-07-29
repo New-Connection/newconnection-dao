@@ -1,5 +1,13 @@
-const { expect } = require("chai")
-const { ethers } = require("hardhat")
+import {expect} from "chai";
+import {ethers} from "hardhat";
+import {
+    LZEndpointMock,
+    LZEndpointMock__factory,
+    UniversalONFT721,
+    UniversalONFT721__factory
+} from "../../typechain-types";
+import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+
 
 describe("UniversalONFT721: ", function () {
     const chainIdSrc = 1
@@ -7,7 +15,15 @@ describe("UniversalONFT721: ", function () {
     const name = "UniversalONFT"
     const symbol = "UONFT"
 
-    let owner, lzEndpointSrcMock, lzEndpointDstMock, ONFTSrc, ONFTDst, LZEndpointMock, ONFT, ONFTSrcIds, ONFTDstIds
+    let owner: SignerWithAddress;
+    let lzEndpointSrcMock: LZEndpointMock;
+    let lzEndpointDstMock: LZEndpointMock;
+    let ONFTSrc: UniversalONFT721;
+    let ONFTDst: UniversalONFT721;
+    let LZEndpointMock: LZEndpointMock__factory;
+    let ONFT: UniversalONFT721__factory;
+    let ONFTSrcIds: number[];
+    let ONFTDstIds: number[];
 
     before(async function () {
         owner = (await ethers.getSigners())[0]
@@ -23,13 +39,13 @@ describe("UniversalONFT721: ", function () {
         lzEndpointDstMock = await LZEndpointMock.deploy(chainIdDst)
 
         // create two UniversalONFT instances
-        ONFTSrc = await ONFT.deploy(name, symbol, lzEndpointSrcMock.address, ...ONFTSrcIds)
-        ONFTDst = await ONFT.deploy(name, symbol, lzEndpointDstMock.address, ...ONFTDstIds)
+        ONFTSrc = await ONFT.deploy(name, symbol, lzEndpointSrcMock.address, ONFTSrcIds[0], ONFTSrcIds[1])
+        ONFTDst = await ONFT.deploy(name, symbol, lzEndpointDstMock.address, ONFTDstIds[0], ONFTDstIds[1])
 
-        lzEndpointSrcMock.setDestLzEndpoint(ONFTDst.address, lzEndpointDstMock.address)
-        lzEndpointDstMock.setDestLzEndpoint(ONFTSrc.address, lzEndpointSrcMock.address)
+        await lzEndpointSrcMock.setDestLzEndpoint(ONFTDst.address, lzEndpointDstMock.address)
+        await lzEndpointDstMock.setDestLzEndpoint(ONFTSrc.address, lzEndpointSrcMock.address)
 
-        // set each contracts source address so it can send to each other
+        // set each contracts source address, so it can send to each other
         await ONFTSrc.setTrustedRemote(chainIdDst, ONFTDst.address) // for A, set B
         await ONFTDst.setTrustedRemote(chainIdSrc, ONFTSrc.address) // for B, set A
     })

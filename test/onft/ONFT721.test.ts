@@ -1,13 +1,23 @@
-const {expect} = require("chai")
-const {ethers} = require("hardhat")
+import {expect} from "chai";
+import {ethers} from "hardhat";
+import {LZEndpointMock, LZEndpointMock__factory, ONFT721Mock, ONFT721Mock__factory} from "../../typechain-types";
+import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 describe("ONFT721: ", function () {
     const chainId_A = 1
     const chainId_B = 2
     const name = "OmnichainNonFungibleToken"
     const symbol = "ONFT"
+    const tokenId = 123
 
-    let owner, warlock, lzEndpointMockA, lzEndpointMockB, LZEndpointMock, ONFT, ONFT_A, ONFT_B
+    let owner: SignerWithAddress;
+    let warlock: SignerWithAddress;
+    let lzEndpointMockA: LZEndpointMock;
+    let lzEndpointMockB: LZEndpointMock;
+    let LZEndpointMock: LZEndpointMock__factory;
+    let ONFT: ONFT721Mock__factory;
+    let ONFT_A: ONFT721Mock;
+    let ONFT_B: ONFT721Mock;
 
     before(async function () {
         owner = (await ethers.getSigners())[0]
@@ -26,16 +36,15 @@ describe("ONFT721: ", function () {
         ONFT_B = await ONFT.deploy(name, symbol, lzEndpointMockB.address)
 
         // wire the lz endpoints to guide msgs back and forth
-        lzEndpointMockA.setDestLzEndpoint(ONFT_B.address, lzEndpointMockB.address)
-        lzEndpointMockB.setDestLzEndpoint(ONFT_A.address, lzEndpointMockA.address)
+        await lzEndpointMockA.setDestLzEndpoint(ONFT_B.address, lzEndpointMockB.address)
+        await lzEndpointMockB.setDestLzEndpoint(ONFT_A.address, lzEndpointMockA.address)
 
-        // set each contracts source address so it can send to each other
+        // set each contracts source address, so it can send to each other
         await ONFT_A.setTrustedRemote(chainId_B, ONFT_B.address)
         await ONFT_B.setTrustedRemote(chainId_A, ONFT_A.address)
     })
 
     it("sendFrom() - your own tokens", async function () {
-        const tokenId = 123
         await ONFT_A.mint(owner.address, tokenId)
 
         // verify the owner of the token is on the source chain
@@ -68,7 +77,7 @@ describe("ONFT721: ", function () {
         // token received on the dst chain
         expect(await ONFT_B.ownerOf(tokenId)).to.be.equal(warlock.address)
 
-        // can send to other onft contract eg. not the original nft contract chain
+        // can send to other onft contract e.g. not the original nft contract chain
         await ONFT_B.connect(warlock).sendFrom(
             warlock.address,
             chainId_A,
@@ -84,7 +93,6 @@ describe("ONFT721: ", function () {
     })
 
     it("sendFrom() - reverts if not owner on non proxy chain", async function () {
-        const tokenId = 123
         await ONFT_A.mint(owner.address, tokenId)
 
         // approve the proxy to swap your token
@@ -111,7 +119,6 @@ describe("ONFT721: ", function () {
     })
 
     it("sendFrom() - on behalf of other user", async function () {
-        const tokenId = 123
         await ONFT_A.mint(owner.address, tokenId)
 
         // approve the proxy to swap your token
@@ -142,7 +149,6 @@ describe("ONFT721: ", function () {
     })
 
     it("sendFrom() - reverts if contract is approved, but not the sending user", async function () {
-        const tokenId = 123
         await ONFT_A.mint(owner.address, tokenId)
 
         // approve the proxy to swap your token
@@ -172,7 +178,6 @@ describe("ONFT721: ", function () {
     })
 
     it("sendFrom() - reverts if not approved on non proxy chain", async function () {
-        const tokenId = 123
         await ONFT_A.mint(owner.address, tokenId)
 
         // approve the proxy to swap your token
