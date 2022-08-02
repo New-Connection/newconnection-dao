@@ -3,12 +3,16 @@
     "startMintId": 1,
     "endMintId": 10
   },
-  "fuji": {
+  "rinkeby": {
     "startMintId": 11,
     "endMintId": 20
   },
-  "rinkeby": {
-    "startMintId": 21,
-    "endMintId": 30
+  "fuji": {
+    "startMintId": 0,
+    "endMintId": 0
+  },
+  "hardhat": {
+    "startMintId": 0,
+    "endMintId": 99
   }
 }

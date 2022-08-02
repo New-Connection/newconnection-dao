@@ -5,13 +5,15 @@
     "strict": true,
     "esModuleInterop": true,
     "outDir": "dist",
-    "declaration": true
+    "declaration": true,
+    "resolveJsonModule": true
   },
   "include": [
     "./scripts",
     "./test",
     "./typechain",
     "./deploy",
+    "./constants",
     "./utils"
   ],
   "files": [

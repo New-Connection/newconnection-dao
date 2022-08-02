@@ -5,26 +5,30 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/draft-ERC721Votes.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./layerzero/token/onft/ONFT721.sol";
 
-contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, Ownable {
-    uint256 public immutable maxSupply;
+contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, ONFT721 {
+    uint256 public nextMintId;
+    uint256 public maxMintId;
     string private _baseURIextended;
     mapping(address => uint8) private _allowList;
 
     constructor(
         string memory name_,
         string memory symbol_,
-        uint256 maxSupply_
-    ) ERC721(name_, symbol_) EIP712(name_, "1") {
-        maxSupply = maxSupply_;
+        address layerZeroEndpoint_,
+        uint256 startMintId_,
+        uint256 endMintId_
+    ) ONFT721(name_, symbol_, layerZeroEndpoint_) EIP712(name_, "1") {
+        nextMintId = startMintId_;
+        maxMintId = endMintId_;
     }
 
     function supportsInterface(bytes4 interfaceId)
         public
         view
         virtual
-        override(ERC721, ERC721Enumerable)
+        override(ERC721, ERC721Enumerable, ONFT721)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
@@ -39,13 +43,15 @@ contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, Ownable
     }
 
     function mint() external {
-        uint256 supply = totalSupply();
         require(_allowList[msg.sender] >= 1, "Exceeded max available to mint");
-        require(supply + 1 <= maxSupply, "Exceeded max supply");
+        require(nextMintId <= maxMintId, "Max mint limit reached");
 
         _allowList[msg.sender] -= 1;
 
-        _safeMint(msg.sender, supply);
+        uint256 newId = nextMintId;
+        nextMintId++;
+
+        _safeMint(msg.sender, newId);
     }
 
     function setAllowList(address[] calldata addresses, uint8 numAllowedToMint) external onlyOwner {
@@ -55,11 +61,12 @@ contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, Ownable
     }
 
     function reserve(uint256 amount) public onlyOwner {
-        uint256 supply = totalSupply();
-        require(supply + amount <= maxSupply, "Max supply has been exceeded");
+        require(nextMintId + (amount - 1) <= maxMintId, "Max mint limit reached");
 
         for (uint256 i = 0; i < amount; i++) {
-            _safeMint(msg.sender, supply + i);
+            uint256 newId = nextMintId;
+            nextMintId++;
+            _safeMint(msg.sender, newId);
         }
     }
 

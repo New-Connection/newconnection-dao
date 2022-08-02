@@ -3,7 +3,8 @@ import { GovernanceNFT } from "../typechain-types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { setAllowList, reserve, mint } from "../utils/governanceNFT-utils";
-import { NFT_BASE_URI, NFT_SUPPLY } from "../helper-hardhat-config";
+import { NFT_BASE_URI } from "../helper-hardhat-config";
+import ONFT_ARGS from "../constants/onftArgs.json";
 
 describe("Test treasury functions", async () => {
     let governanceNFT: GovernanceNFT;
@@ -90,11 +91,14 @@ describe("Test treasury functions", async () => {
     });
 
     it("should fail mint after maxSupply tokens minted", async function () {
-        await reserve(owner, NFT_SUPPLY);
+        const supply = ONFT_ARGS["hardhat"].endMintId - ONFT_ARGS["hardhat"].startMintId + 1;
+
+        console.log(supply);
+        await reserve(owner, supply);
 
         await setAllowList(owner, [minter.address], numAllowedToMint);
 
-        await expect(governanceNFT.connect(minter).mint()).revertedWith("Exceeded max supply");
+        await expect(governanceNFT.connect(minter).mint()).revertedWith("Max mint limit reached");
     });
 
     it("should set base URI", async function () {
@@ -105,7 +109,7 @@ describe("Test treasury functions", async () => {
 
         await mint(minter);
 
-        const lastMintedTokenId = (await governanceNFT.totalSupply()).sub(1);
+        const lastMintedTokenId = (await governanceNFT.nextMintId()).sub(1);
 
         expect(await governanceNFT.tokenURI(lastMintedTokenId)).equal(
             NFT_BASE_URI + lastMintedTokenId

@@ -10,7 +10,6 @@ export const TOKEN_NAME = "Governor Token";
 export const TOKEN_SYMBOL = "GT";
 export const NFT_NAME = "NFT Example";
 export const NFT_SYMBOL = "NFTE";
-export const NFT_SUPPLY = 100;
 export const NFT_BASE_URI = "ipfs://ASDkfCfgFgddkWvHocHpSxC1K3sfFNfribqmZ7WYB2";
 export const GOVERNOR_NAME = "Governor Contract";
 export const GOVERNOR_INFO_URI = "ipfs://QmeqfJkfCfgFgddkWvHocHpSxC1K3sfFNfribqmZ7WYB2";
