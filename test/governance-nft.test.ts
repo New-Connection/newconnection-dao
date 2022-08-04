@@ -111,8 +111,6 @@ describe("Test treasury functions", async () => {
 
         const lastMintedTokenId = (await governanceNFT.nextMintId()).sub(1);
 
-        expect(await governanceNFT.tokenURI(lastMintedTokenId)).equal(
-            NFT_BASE_URI + lastMintedTokenId
-        );
+        expect(await governanceNFT.tokenURI(lastMintedTokenId)).equal(NFT_BASE_URI);
     });
 });

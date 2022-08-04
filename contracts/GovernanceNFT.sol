@@ -42,6 +42,12 @@ contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, ONFT721
         return _allowList[addr];
     }
 
+    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+        _requireMinted(tokenId);
+
+        return _baseURI();
+    }
+
     function mint() external {
         require(_allowList[msg.sender] >= 1, "Exceeded max available to mint");
         require(nextMintId <= maxMintId, "Max mint limit reached");
