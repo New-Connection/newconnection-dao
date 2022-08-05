@@ -34,18 +34,22 @@ contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, ONFT721
         return super.supportsInterface(interfaceId);
     }
 
-    function _baseURI() internal view virtual override returns (string memory) {
-        return _baseURIextended;
-    }
-
-    function numAvailableToMint(address addr) external view returns (uint8) {
-        return _allowList[addr];
+    function baseURI() public view returns (string memory) {
+        return _baseURI();
     }
 
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         _requireMinted(tokenId);
 
         return _baseURI();
+    }
+
+    function numAvailableToMint(address addr) external view returns (uint8) {
+        return _allowList[addr];
+    }
+
+    function _baseURI() internal view virtual override returns (string memory) {
+        return _baseURIextended;
     }
 
     function mint() external {
@@ -76,8 +80,8 @@ contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, ONFT721
         }
     }
 
-    function setBaseURI(string memory baseURI) external onlyOwner {
-        _baseURIextended = baseURI;
+    function setBaseURI(string memory baseURI_) external onlyOwner {
+        _baseURIextended = baseURI_;
     }
 
     function _beforeTokenTransfer(
