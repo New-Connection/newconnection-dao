@@ -3,15 +3,16 @@ import { GovernanceNFT } from "../typechain-types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { setAllowList, reserve, mint } from "../utils/governanceNFT-utils";
-import { NFT_BASE_URI } from "../helper-hardhat-config";
+import { NFT_BASE_URI, NFT_PRICE } from "../helper-hardhat-config";
 import ONFT_ARGS from "../constants/onftArgs.json";
 
-describe("Test treasury functions", async () => {
+describe("Test NFT contract functions", async () => {
     let governanceNFT: GovernanceNFT;
 
     let owner: SignerWithAddress, notOwner: SignerWithAddress, minter: SignerWithAddress;
 
     const numAllowedToMint = 5;
+    const pricePerToken = ethers.utils.parseEther(NFT_PRICE);
 
     beforeEach(async () => {
         await deployments.fixture(["all"]);
@@ -54,7 +55,7 @@ describe("Test treasury functions", async () => {
     it("should mint token", async function () {
         await setAllowList(owner, [minter.address], numAllowedToMint);
 
-        const mintTx = await governanceNFT.connect(minter).mint();
+        const mintTx = await governanceNFT.connect(minter).mint({ value: pricePerToken });
         await mintTx.wait(1);
 
         expect(await governanceNFT.balanceOf(minter.address)).equal(1);
@@ -64,7 +65,7 @@ describe("Test treasury functions", async () => {
         await setAllowList(owner, [minter.address], numAllowedToMint);
 
         for (let i = 1; i <= numAllowedToMint; i++) {
-            const mintTx = await governanceNFT.connect(minter).mint();
+            const mintTx = await governanceNFT.connect(minter).mint({ value: pricePerToken });
             await mintTx.wait(1);
         }
 
@@ -75,17 +76,17 @@ describe("Test treasury functions", async () => {
         await setAllowList(owner, [minter.address], numAllowedToMint);
 
         for (let i = 1; i <= numAllowedToMint; i++) {
-            const mintTx = await governanceNFT.connect(minter).mint();
+            const mintTx = await governanceNFT.connect(minter).mint({ value: pricePerToken });
             await mintTx.wait(1);
         }
 
-        await expect(governanceNFT.connect(minter).mint()).revertedWith(
+        await expect(governanceNFT.connect(minter).mint({ value: pricePerToken })).revertedWith(
             "Exceeded max available to mint"
         );
     });
 
     it("should fail mint (not in allow list)", async function () {
-        await expect(governanceNFT.connect(minter).mint()).revertedWith(
+        await expect(governanceNFT.connect(minter).mint({ value: pricePerToken })).revertedWith(
             "Exceeded max available to mint"
         );
     });
@@ -112,5 +113,41 @@ describe("Test treasury functions", async () => {
         const lastMintedTokenId = (await governanceNFT.nextMintId()).sub(1);
 
         expect(await governanceNFT.tokenURI(lastMintedTokenId)).equal(NFT_BASE_URI);
+    });
+
+    it("should withdraw balance by owner", async function () {
+        await setAllowList(owner, [minter.address], numAllowedToMint);
+        await mint(minter);
+
+        const contractBalanceBefore = await ethers.provider.getBalance(governanceNFT.address);
+        expect(contractBalanceBefore).equal(pricePerToken);
+
+        const balanceBefore = await ethers.provider.getBalance(owner.address);
+        console.log(balanceBefore.toString());
+
+        const withdrawTx = await governanceNFT.connect(owner).withdraw();
+        await withdrawTx.wait(1);
+
+        const balanceAfter = await ethers.provider.getBalance(owner.address);
+        console.log(balanceAfter.toString());
+        expect(balanceBefore.add(pricePerToken)).gte(balanceAfter);
+
+        const contractBalanceAfter = await ethers.provider.getBalance(governanceNFT.address);
+        expect(contractBalanceAfter).equal(0);
+    });
+
+    it("should fail withdraw by NOT owner ", async function () {
+        await setAllowList(owner, [minter.address], numAllowedToMint);
+        await mint(minter);
+
+        const contractBalanceBefore = await ethers.provider.getBalance(governanceNFT.address);
+        expect(contractBalanceBefore).equal(pricePerToken);
+
+        await expect(governanceNFT.connect(notOwner).withdraw()).revertedWith(
+            "Ownable: caller is not the owner"
+        );
+
+        const contractBalanceAfter = await ethers.provider.getBalance(governanceNFT.address);
+        expect(contractBalanceAfter).equal(pricePerToken);
     });
 });

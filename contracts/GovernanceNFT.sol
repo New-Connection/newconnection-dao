@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "./layerzero/token/onft/ONFT721.sol";
 
 contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, ONFT721 {
+    uint256 public immutable pricePerToken;
     uint256 public nextMintId;
     uint256 public maxMintId;
     string private _baseURIextended;
@@ -16,12 +17,14 @@ contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, ONFT721
     constructor(
         string memory name_,
         string memory symbol_,
+        uint256 priceInEther,
         address layerZeroEndpoint_,
         uint256 startMintId_,
         uint256 endMintId_
     ) ONFT721(name_, symbol_, layerZeroEndpoint_) EIP712(name_, "1") {
         nextMintId = startMintId_;
         maxMintId = endMintId_;
+        pricePerToken = priceInEther;
     }
 
     function supportsInterface(bytes4 interfaceId)
@@ -52,9 +55,10 @@ contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, ONFT721
         return _baseURIextended;
     }
 
-    function mint() external {
+    function mint() external payable {
         require(_allowList[msg.sender] >= 1, "Exceeded max available to mint");
         require(nextMintId <= maxMintId, "Max mint limit reached");
+        require(msg.value >= pricePerToken, "Not enough ETH");
 
         _allowList[msg.sender] -= 1;
 
@@ -82,6 +86,12 @@ contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, ONFT721
 
     function setBaseURI(string memory baseURI_) external onlyOwner {
         _baseURIextended = baseURI_;
+    }
+
+    function withdraw() external onlyOwner {
+        uint256 balance = address(this).balance;
+        (bool sent, ) = msg.sender.call{value: balance}("");
+        require(sent, "Failed to send Ether");
     }
 
     function _beforeTokenTransfer(

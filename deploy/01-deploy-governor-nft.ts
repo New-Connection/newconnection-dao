@@ -1,7 +1,8 @@
 import { DeployFunction } from "hardhat-deploy/types";
-import { NFT_NAME, NFT_SYMBOL } from "../helper-hardhat-config";
+import { NFT_NAME, NFT_PRICE, NFT_SYMBOL } from "../helper-hardhat-config";
 import LZ_ENDPOINTS from "../constants/layerzeroEndpoints.json";
 import ONFT_ARGS from "../constants/onftArgs.json";
+import { ethers } from "hardhat";
 
 const deployGovernanceToken: DeployFunction = async function (hre) {
     const { deploy } = hre.deployments;
@@ -14,7 +15,14 @@ const deployGovernanceToken: DeployFunction = async function (hre) {
 
     const governanceNFT = await deploy("GovernanceNFT", {
         from: deployer,
-        args: [NFT_NAME, NFT_SYMBOL, lzEndpointAddress, onftArgs.startMintId, onftArgs.endMintId],
+        args: [
+            NFT_NAME,
+            NFT_SYMBOL,
+            ethers.utils.parseEther(NFT_PRICE),
+            lzEndpointAddress,
+            onftArgs.startMintId,
+            onftArgs.endMintId,
+        ],
         log: true,
     });
 };
