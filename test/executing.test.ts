@@ -39,13 +39,18 @@ describe("Executing proposals in Governor", async () => {
             .propose([governor.address], [0], [encodedFunctionCall], PROPOSAL_DESCRIPTION);
         const proposeReceipt = await proposeTx.wait(1);
         const proposalId = proposeReceipt.events![0].args!.proposalId;
+        await moveBlocks(VOTING_DELAY + 1);
+
+        //1 - Active
+        expect(await governor.state(proposalId)).equal(1);
+
         console.log(`Proposal with id:${proposalId} created`);
         return proposalId;
     };
 
     it("should execute proposal", async () => {
         const proposalId = await createProposal(owner);
-        await moveBlocks(VOTING_DELAY + 1);
+
         console.log(
             `Current state of proposal(id:${proposalId}) is ${await governor.state(proposalId)}`
         );

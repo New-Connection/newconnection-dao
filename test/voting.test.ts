@@ -37,9 +37,6 @@ describe("Voting for proposals in Governor", async () => {
         governanceNFT = await ethers.getContract("GovernanceNFT");
         encodedFunctionCall = governor.interface.encodeFunctionData("incrementExecutedProposals");
 
-        await reserve(owner, 100);
-        await delegate(owner, owner.address);
-
         //Transfer nft to addresses
         // await transferNFT(owner, proposer.address, 1);
         // await delegate(proposer, proposer.address);
@@ -49,6 +46,9 @@ describe("Voting for proposals in Governor", async () => {
     });
 
     const transferNftToAccounts = async () => {
+        await reserve(owner, 100);
+        await delegate(owner, owner.address);
+
         //transfer token to account for Test: Less than quorum needed votes
         await transferNFT(owner, quorumLessVotesVoter.address, 1);
         await delegate(quorumLessVotesVoter, quorumLessVotesVoter.address);
