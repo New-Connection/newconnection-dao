@@ -5,9 +5,9 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/draft-ERC721Votes.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
-import "./layerzero/token/onft/ONFT721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, ONFT721 {
+contract GovernanceNFT is ERC721, ERC721Enumerable, Ownable, EIP712, ERC721Votes {
     uint256 public immutable pricePerToken;
     uint256 public nextMintId;
     uint256 public maxMintId;
@@ -18,10 +18,9 @@ contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, ONFT721
         string memory name_,
         string memory symbol_,
         uint256 priceInEther,
-        address layerZeroEndpoint_,
         uint256 startMintId_,
         uint256 endMintId_
-    ) ONFT721(name_, symbol_, layerZeroEndpoint_) EIP712(name_, "1") {
+    )ERC721(name_, symbol_) EIP712(name_, "1") {
         nextMintId = startMintId_;
         maxMintId = endMintId_;
         pricePerToken = priceInEther;
@@ -31,7 +30,7 @@ contract GovernanceNFT is ERC721, ERC721Enumerable, EIP712, ERC721Votes, ONFT721
         public
         view
         virtual
-        override(ERC721, ERC721Enumerable, ONFT721)
+        override(ERC721, ERC721Enumerable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
