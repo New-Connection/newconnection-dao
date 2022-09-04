@@ -5,10 +5,12 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { PROPOSAL_DESCRIPTION, VOTING_DELAY, VOTING_PERIOD } from "../helper-hardhat-config";
 import { delegate, reserve, transferNFT } from "../utils/governanceNFT-utils";
+import { DEBUG } from "../helper-hardhat-config";
 
-describe("Executing proposals in Governor", async () => {
+describe("3-Executing proposals in Governor", async () => {
     let governor: GovernorContract;
     let governanceNFT: GovernanceNFT;
+    let outsideNFT: GovernanceNFT;
 
     let encodedFunctionCall: string;
     let owner: SignerWithAddress;
@@ -26,41 +28,49 @@ describe("Executing proposals in Governor", async () => {
         governanceNFT = await ethers.getContract("GovernanceNFT");
         encodedFunctionCall = governor.interface.encodeFunctionData("incrementExecutedProposals");
 
-        await reserve(owner, 2);
-        await delegate(owner, owner.address);
+        await reserve(governanceNFT, owner, 2);
+        await delegate(governanceNFT, owner, owner.address);
 
-        await transferNFT(owner, proposer.address, 1);
-        await delegate(proposer, proposer.address);
+        await transferNFT(governanceNFT, owner, proposer.address, 1);
+        await delegate(governanceNFT, proposer, proposer.address);
+
+        await deployments.fixture(["all", "GovernanceNFT", "fakeNFT"])
+        outsideNFT = await ethers.getContract("GovernanceNFT");
+        await reserve(outsideNFT, owner, 2);
+        await transferNFT(outsideNFT, owner, proposer.address, 1);
+        await delegate(outsideNFT, proposer, proposer.address)
+        governor.addToken(outsideNFT.address);
+        
     });
 
-    const createProposal = async (signer: SignerWithAddress): Promise<number> => {
+    const createProposal = async (signer: SignerWithAddress, tokenAddress: GovernanceNFT): Promise<number> => {
         const proposeTx = await governor
             .connect(signer)
-            .propose([governor.address], [0], [encodedFunctionCall], PROPOSAL_DESCRIPTION);
+            .propose([governor.address], [0], [encodedFunctionCall], PROPOSAL_DESCRIPTION, tokenAddress.address);
         const proposeReceipt = await proposeTx.wait(1);
         const proposalId = proposeReceipt.events![0].args!.proposalId;
         await moveBlocks(VOTING_DELAY + 1);
 
         //1 - Active
         expect(await governor.state(proposalId)).equal(1);
-
-        console.log(`Proposal with id:${proposalId} created`);
+        DEBUG ? console.log(`Proposal with id:${proposalId} created`) : ''
         return proposalId;
     };
 
     it("should execute proposal", async () => {
-        const proposalId = await createProposal(owner);
+        const proposalId = await createProposal(owner, governanceNFT);
 
-        console.log(
+        DEBUG ? console.log(
             `Current state of proposal(id:${proposalId}) is ${await governor.state(proposalId)}`
-        );
+        ) : ''
 
         await governor.castVoteWithReason(proposalId, voteWayFor, reason);
-        console.log("Voted for");
+        
         await moveBlocks(VOTING_PERIOD + 1);
+        DEBUG ? 
         console.log(
             `Current state of proposal(id:${proposalId}) is ${await governor.state(proposalId)}`
-        );
+        ) : ''
 
         const executeTx = await governor.execute(
             [governor.address],
@@ -74,11 +84,11 @@ describe("Executing proposals in Governor", async () => {
     });
 
     it("should fail execute proposal (voting period not ended)", async () => {
-        const proposalId = await createProposal(owner);
+        const proposalId = await createProposal(owner, governanceNFT);
         await moveBlocks(VOTING_DELAY + 1);
-        console.log(
+        DEBUG ? console.log(
             `Current state of proposal(id:${proposalId}) is ${await governor.state(proposalId)}`
-        );
+        ) : ''
 
         await expect(
             governor.execute(
@@ -93,18 +103,18 @@ describe("Executing proposals in Governor", async () => {
     });
 
     it("should fail execute proposal (voting against)", async () => {
-        const proposalId = await createProposal(owner);
+        const proposalId = await createProposal(owner, governanceNFT);
         await moveBlocks(VOTING_DELAY + 1);
-        console.log(
+        DEBUG ? console.log(
             `Current state of proposal(id:${proposalId}) is ${await governor.state(proposalId)}`
-        );
+        ) : ''
 
         await governor.castVoteWithReason(proposalId, voteWayAgainst, reason);
-        console.log("Voted against");
+        DEBUG ? console.log("Voted against") : ''
         await moveBlocks(VOTING_PERIOD + 1);
-        console.log(
+        DEBUG ? console.log(
             `Current state of proposal(id:${proposalId}) is ${await governor.state(proposalId)}`
-        );
+        ) : ''
 
         await expect(
             governor.execute(
@@ -119,16 +129,17 @@ describe("Executing proposals in Governor", async () => {
     });
 
     it("should fail execute proposal (not voting)", async () => {
-        const proposalId = await createProposal(owner);
+        const proposalId = await createProposal(owner, governanceNFT);
         await moveBlocks(VOTING_DELAY + 1);
-        console.log(
+        
+        DEBUG ? console.log(
             `Current state of proposal(id:${proposalId}) is ${await governor.state(proposalId)}`
-        );
+        ) : ''
 
         await moveBlocks(VOTING_PERIOD + 1);
-        console.log(
+        DEBUG ? console.log(
             `Current state of proposal(id:${proposalId}) is ${await governor.state(proposalId)}`
-        );
+        ) : ''
 
         await expect(
             governor.execute(
@@ -143,7 +154,7 @@ describe("Executing proposals in Governor", async () => {
     });
 
     it("should cancel proposal by proposer", async function () {
-        const proposalId = await createProposal(proposer);
+        const proposalId = await createProposal(proposer, governanceNFT);
 
         const cancelTx = await governor
             .connect(proposer)
@@ -159,7 +170,7 @@ describe("Executing proposals in Governor", async () => {
     });
 
     it("should cancel proposal by owner", async function () {
-        const proposalId = await createProposal(proposer);
+        const proposalId = await createProposal(proposer, governanceNFT);
 
         const cancelTx = await governor
             .connect(owner)
@@ -171,14 +182,44 @@ describe("Executing proposals in Governor", async () => {
             );
         await cancelTx.wait(1);
 
-        console.log(await governor.state(proposalId));
+        DEBUG ? console.log(await governor.state(proposalId)) : ''
 
         expect(await governor.state(proposalId)).equal(2);
     });
 
     it("should fail cancel proposal", async function () {
-        await createProposal(proposer);
+        await createProposal(proposer, governanceNFT);
+        await expect(
+            governor
+                .connect(failCanceler)
+                .cancel(
+                    [governor.address],
+                    [0],
+                    [encodedFunctionCall],
+                    ethers.utils.id(PROPOSAL_DESCRIPTION)
+                )
+        ).revertedWith("Not proposer or owner");
+    });
 
+    // MULTITOKENS
+    it("should cancel proposal by proposer", async function () {
+        const proposalId = await createProposal(proposer, outsideNFT);
+
+        const cancelTx = await governor
+            .connect(proposer)
+            .cancel(
+                [governor.address],
+                [0],
+                [encodedFunctionCall],
+                ethers.utils.id(PROPOSAL_DESCRIPTION)
+            );
+        await cancelTx.wait(1);
+
+        expect(await governor.state(proposalId)).equal(2);
+    });
+
+    it("should fail cancel proposal", async function () {
+        await createProposal(proposer, outsideNFT);
         await expect(
             governor
                 .connect(failCanceler)

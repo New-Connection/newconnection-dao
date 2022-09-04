@@ -1,14 +1,15 @@
 import { ethers, deployments } from "hardhat";
-import { GovernorContract, Treasury } from "../typechain-types";
+import { GovernorContract, Treasury, GovernanceNFT } from "../typechain-types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { delegate, reserve, transferNFT } from "../utils/governanceNFT-utils";
-import { VOTING_DELAY, VOTING_PERIOD } from "../helper-hardhat-config";
+import { VOTING_DELAY, VOTING_PERIOD, DEBUG } from "../helper-hardhat-config";
 import { moveBlocks } from "../utils/move-blocks";
 
-describe("Test treasury functions", async () => {
+describe("5 - Test treasury functions", async () => {
     let governor: GovernorContract;
     let treasury: Treasury;
+    let governanceNFT: GovernanceNFT;
 
     let treasurySendFunctionCall: string;
     let proposalId: number;
@@ -28,6 +29,7 @@ describe("Test treasury functions", async () => {
 
         governor = await ethers.getContract("GovernorContract");
         treasury = await ethers.getContract("Treasury");
+        governanceNFT = await ethers.getContract("GovernanceNFT");
 
         treasurySendFunctionCall = treasury.interface.encodeFunctionData("send", [
             receiver.address,
@@ -43,20 +45,20 @@ describe("Test treasury functions", async () => {
     });
 
     const transferNftToAccounts = async () => {
-        await reserve(owner, 20);
-        await delegate(owner, owner.address);
+        await reserve(governanceNFT, owner, 20);
+        await delegate(governanceNFT, owner, owner.address);
 
         //voter1's votes > voter2's votes
-        await transferNFT(owner, voter1.address, 6);
-        await delegate(voter1, voter1.address);
-        await transferNFT(owner, voter2.address, 4);
-        await delegate(voter2, voter2.address);
+        await transferNFT(governanceNFT, owner, voter1.address, 6);
+        await delegate(governanceNFT, voter1, voter1.address);
+        await transferNFT(governanceNFT, owner, voter2.address, 4);
+        await delegate(governanceNFT, voter2, voter2.address);
     };
 
     const createSendProposal = async () => {
         const proposeTx = await governor
             .connect(owner)
-            .propose([treasury.address], [0], [treasurySendFunctionCall], sendProposalDescription);
+            .propose([treasury.address], [0], [treasurySendFunctionCall], sendProposalDescription, governanceNFT.address);
         const proposeReceipt = await proposeTx.wait(1);
         proposalId = proposeReceipt.events![0].args!.proposalId;
 
@@ -64,8 +66,8 @@ describe("Test treasury functions", async () => {
 
         //1 - Active
         expect(await governor.state(proposalId)).equal(1);
-
-        console.log(`Proposal with id:${proposalId} created`);
+        DEBUG ? 
+        console.log(`Proposal with id:${proposalId} created`) : ""
     };
 
     it("should increment treasury's counter", async function () {
@@ -89,11 +91,11 @@ describe("Test treasury functions", async () => {
         await treasury.connect(owner).transferOwnership(governor.address);
 
         const receiverBalanceBefore = await ethers.provider.getBalance(receiver.address);
-        console.log(
+        DEBUG ? console.log(
             `receiver balance before proposal execution: ${ethers.utils.formatEther(
                 receiverBalanceBefore
             )}`
-        );
+        ) : ''
 
         await createSendProposal();
         //voteWayFor > voteWayAgainst
@@ -113,11 +115,11 @@ describe("Test treasury functions", async () => {
         await executeTx.wait(1);
 
         const receiverBalanceAfter = await ethers.provider.getBalance(receiver.address);
-        console.log(
+        DEBUG ? console.log(
             `receiver balance after proposal execution: ${ethers.utils.formatEther(
                 receiverBalanceAfter
             )}`
-        );
+        ) : ''
 
         expect(receiverBalanceBefore.add(amountToSend)).equal(receiverBalanceAfter);
     });
@@ -126,11 +128,11 @@ describe("Test treasury functions", async () => {
         await treasury.connect(owner).transferOwnership(governor.address);
 
         const receiverBalanceBefore = await ethers.provider.getBalance(receiver.address);
-        console.log(
+        DEBUG ? console.log(
             `receiver balance before proposal execution: ${ethers.utils.formatEther(
                 receiverBalanceBefore
             )}`
-        );
+        ) : ''
 
         await createSendProposal();
         //voteWayAgainst > voteWayFor
@@ -151,11 +153,11 @@ describe("Test treasury functions", async () => {
         ).revertedWith("Governor: proposal not successful'");
 
         const receiverBalanceAfter = await ethers.provider.getBalance(receiver.address);
-        console.log(
+        DEBUG ? console.log(
             `receiver balance after proposal execution: ${ethers.utils.formatEther(
                 receiverBalanceAfter
             )}`
-        );
+        ) : ''
 
         expect(receiverBalanceBefore).equal(receiverBalanceAfter);
     });

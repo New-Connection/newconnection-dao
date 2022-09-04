@@ -19,8 +19,8 @@ describe("UniversalONFT721: ", function () {
     let lzEndpointDstMock: LZEndpointMock;
     let ONFTSrc: UniversalONFT721;
     let ONFTDst: UniversalONFT721;
-    let LZEndpointMock: LZEndpointMock__factory;
-    let ONFT: UniversalONFT721__factory;
+    let LZEndpointMock: any;
+    let ONFT: any;
     let ONFTSrcIds: number[];
     let ONFTDstIds: number[];
 

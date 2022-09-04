@@ -19,8 +19,8 @@ describe("ONFT721: ", function () {
     let warlock: SignerWithAddress;
     let lzEndpointMockA: LZEndpointMock;
     let lzEndpointMockB: LZEndpointMock;
-    let LZEndpointMock: LZEndpointMock__factory;
-    let ONFT: ONFT721Mock__factory;
+    let LZEndpointMock: any;
+    let ONFT: any;
     let ONFT_A: ONFT721Mock;
     let ONFT_B: ONFT721Mock;
 
