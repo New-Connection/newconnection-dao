@@ -1,20 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.8;
 
-import "@openzeppelin/contracts/governance/Governor.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./GovernorMultiTokens/GovernorVotesQuorumFraction.sol";
+import "./GovernorMultiTokens/GovernorVotes.sol";
+import "./GovernorMultiTokens/GovernorMulti.sol";
+import "./GovernorMultiTokens/GovernorSettingsMulti.sol";
+import "./GovernorMultiTokens/GovernorCountingSimpleMulti.sol";
 
 contract GovernorContract is
-    Governor,
-    GovernorSettings,
-    GovernorCountingSimple,
+    GovernorMulti,
+    GovernorSettingsMulti,
+    GovernorCountingSimpleMulti,
     GovernorVotes,
-    GovernorVotesQuorumFraction,
-    Ownable
+    GovernorVotesQuorumFraction
 {
     //proposalId => proposer
     mapping(uint256 => address) private _proposers;
@@ -33,8 +31,8 @@ contract GovernorContract is
         uint256 votingPeriod_,
         uint256 quorumPercentage_
     )
-        Governor(name_)
-        GovernorSettings(
+        GovernorMulti(name_)
+        GovernorSettingsMulti(
             1,
             votingPeriod_, /* 6545 blocks ~ 1 day */
             1
@@ -46,7 +44,7 @@ contract GovernorContract is
     function proposalThreshold()
         public
         view
-        override(Governor, GovernorSettings)
+        override(GovernorMulti, GovernorSettingsMulti)
         returns (uint256)
     {
         return super.proposalThreshold();
@@ -85,9 +83,10 @@ contract GovernorContract is
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas,
-        string memory description
-    ) public virtual override returns (uint256) {
-        uint256 proposalId = super.propose(targets, values, calldatas, description);
+        string memory description,
+        IVotes tokenAddress
+    ) public virtual override tokenExist(tokenAddress) returns (uint256) {
+        uint256 proposalId = super.propose(targets, values, calldatas, description, tokenAddress);
         _proposers[proposalId] = _msgSender();
         _totalProposals++;
         return proposalId;
@@ -104,10 +103,12 @@ contract GovernorContract is
             getProposer(proposalId) == _msgSender() || owner() == _msgSender(),
             "Not proposer or owner"
         );
-
         return super._cancel(targets, values, calldatas, descriptionHash);
     }
 
+    function version() public pure override returns (string memory) {
+        return "2.0";
+    }
     function incrementExecutedProposals() public onlyGovernance {
         _executedProposals++;
     }
