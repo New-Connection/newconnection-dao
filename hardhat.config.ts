@@ -27,6 +27,9 @@ const config: HardhatUserConfig = {
         deployer: {
             default: 0,
         },
+        notOwner: {
+            default: 2,
+        }
     },
     networks: {
         hardhat: {
