@@ -1,7 +1,10 @@
 import { network } from "hardhat";
+import {
+    DEBUG_BLOCKS
+} from "../helper-hardhat-config";
 
 export async function moveTime(amount: number) {
-    console.log("Moving time...");
+    DEBUG_BLOCKS ? console.log("Moving time...") : ''
     await network.provider.send("evm_increaseTime", [amount]);
-    console.log(`Moved forward ${amount} seconds`);
+    DEBUG_BLOCKS ? console.log(`Moved forward ${amount} seconds`) : ''
 }

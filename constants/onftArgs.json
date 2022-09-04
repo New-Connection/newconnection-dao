@@ -1,0 +1,18 @@
+{
+  "bsc-testnet": {
+    "startMintId": 1,
+    "endMintId": 10
+  },
+  "rinkeby": {
+    "startMintId": 11,
+    "endMintId": 20
+  },
+  "fuji": {
+    "startMintId": 0,
+    "endMintId": 0
+  },
+  "hardhat": {
+    "startMintId": 0,
+    "endMintId": 99
+  }
+}
