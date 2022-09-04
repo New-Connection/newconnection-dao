@@ -4,9 +4,9 @@ import LZ_ENDPOINTS from "../constants/layerzeroEndpoints.json";
 import ONFT_ARGS from "../constants/onftArgs.json";
 import { ethers } from "hardhat";
 
-const deployGovernanceToken: DeployFunction = async function (hre) {
+const deployFakeGovernanceToken: DeployFunction = async function (hre) {
     const { deploy } = hre.deployments;
-    const { deployer } = await hre.getNamedAccounts();
+    const { notOwner } = await hre.getNamedAccounts();
 
     // @ts-ignore
     const lzEndpointAddress = LZ_ENDPOINTS[hre.network.name];
@@ -14,9 +14,9 @@ const deployGovernanceToken: DeployFunction = async function (hre) {
     const onftArgs = ONFT_ARGS[hre.network.name];
 
     await deploy("GovernanceNFT", {
-        from: deployer,
+        from: notOwner,
         args: [
-            NFT_NAME,
+            "FAKENFT",
             NFT_SYMBOL,
             ethers.utils.parseEther(NFT_PRICE),
             lzEndpointAddress,
@@ -27,5 +27,5 @@ const deployGovernanceToken: DeployFunction = async function (hre) {
     });
 };
 
-export default deployGovernanceToken;
-deployGovernanceToken.tags = ["all", "GovernanceNFT", "NFT2"];
+export default deployFakeGovernanceToken;
+deployFakeGovernanceToken.tags = ["all", "GovernanceNFT", "fakeNFT"];
